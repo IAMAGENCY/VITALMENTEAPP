@@ -139,7 +139,7 @@ export default function PerfilPage() {
     }
   };
 
-  const calculateMacros = (user) => {
+  const calculateMacros = (user: any) => {
     const peso = parseFloat(user.peso);
     const altura = parseFloat(user.altura);
     const edad = parseInt(user.edad);
