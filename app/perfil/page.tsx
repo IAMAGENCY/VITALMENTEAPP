@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -9,7 +8,12 @@ import { dbOperations } from '@/lib/supabase';
 
 export default function PerfilPage() {
   const [userData, setUserData] = useState(null);
-  const [macros, setMacros] = useState(null);
+  const [macros, setMacros] = useState<{
+    calorias: number;
+    proteinas: number;
+    carbohidratos: number;
+    grasas: number;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
   const [connectionStatus, setConnectionStatus] = useState('Cargando...');
@@ -188,7 +192,7 @@ export default function PerfilPage() {
     return imc.toFixed(1);
   };
 
-  const getIMCCategory = (imc) => {
+  const getIMCCategory = (imc: number) => {
     if (imc < 18.5) return { text: 'Bajo peso', color: 'text-blue-600' };
     if (imc < 25) return { text: 'Normal', color: 'text-green-600' };
     if (imc < 30) return { text: 'Sobrepeso', color: 'text-yellow-600' };
@@ -500,7 +504,7 @@ export default function PerfilPage() {
 }
 
 // Componente de login para usuarios existentes
-function LoginForm({ onLoginSuccess }) {
+function LoginForm({ onLoginSuccess }: { onLoginSuccess: () => void }) {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
