@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -16,7 +15,12 @@ export default function CalculadoraMacrosPage() {
     objetivo: 'mantener'
   });
 
-  const [resultado, setResultado] = useState(null);
+  const [resultado, setResultado] = useState<{
+    calorias: number;
+    proteinas: number;
+    carbohidratos: number;
+    grasas: number;
+  } | null>(null);
   const [connectionStatus, setConnectionStatus] = useState('Verificando conexión...');
 
   useEffect(() => {
