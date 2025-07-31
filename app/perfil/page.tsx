@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { dbOperations } from '@/lib/supabase';
 
 export default function PerfilPage() {
-  const [userData, setUserData] = useState(null);
+  const [userData, setUserData] = useState<any>(null);
   const [macros, setMacros] = useState<{
     calorias: number;
     proteinas: number;
