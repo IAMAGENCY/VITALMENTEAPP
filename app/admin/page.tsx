@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -39,7 +38,7 @@ export default function AdminPage() {
       case 'files':
         return <FileManager />;
       default:
-        return <DashboardOverview />;
+        return <DashboardOverview onTabChange={setActiveTab} />;
     }
   };
 
@@ -104,7 +103,11 @@ export default function AdminPage() {
 }
 
 // Dashboard Overview Component
-function DashboardOverview() {
+interface DashboardOverviewProps {
+  onTabChange: (tab: string) => void;
+}
+
+function DashboardOverview({ onTabChange }: DashboardOverviewProps) {
   const quickStats = [
     { label: 'Total Usuarios', value: '127', change: '+15%', color: 'text-blue-600', bg: 'bg-blue-100' },
     { label: 'Alimentos en Banco', value: '45', change: '+8', color: 'text-green-600', bg: 'bg-green-100' },
@@ -152,28 +155,28 @@ function DashboardOverview() {
         <h3 className="font-semibold text-gray-900 mb-4">Acciones Rápidas</h3>
         <div className="grid grid-cols-2 gap-3">
           <button
-            onClick={() => setActiveTab('foodbank')}
+            onClick={() => onTabChange('foodbank')}
             className="flex items-center justify-center p-3 bg-green-50 rounded-lg hover:bg-green-100 transition-colors"
           >
             <i className="ri-restaurant-line text-green-600 mr-2"></i>
             <span className="text-sm font-medium text-green-600">Gestionar Alimentos</span>
           </button>
           <button
-            onClick={() => setActiveTab('workouts')}
+            onClick={() => onTabChange('workouts')}
             className="flex items-center justify-center p-3 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
           >
             <i className="ri-run-line text-blue-600 mr-2"></i>
             <span className="text-sm font-medium text-blue-600">Entrenamientos</span>
           </button>
           <button
-            onClick={() => setActiveTab('mindfulness')}
+            onClick={() => onTabChange('mindfulness')}
             className="flex items-center justify-center p-3 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors"
           >
             <i className="ri-heart-line text-purple-600 mr-2"></i>
             <span className="text-sm font-medium text-purple-600">Mindfulness</span>
           </button>
           <button
-            onClick={() => setActiveTab('analytics')}
+            onClick={() => onTabChange('analytics')}
             className="flex items-center justify-center p-3 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
           >
             <i className="ri-bar-chart-line text-red-600 mr-2"></i>
@@ -242,55 +245,118 @@ function DashboardOverview() {
 // File Manager Component
 function FileManager() {
   const [files, setFiles] = useState([
-    { name: 'receta_batido_proteico.pdf', size: '2.3 MB', type: 'PDF', uploadedAt: '2024-01-15', category: 'recetas' },
-    { name: 'guia_suplementos.pdf', size: '1.8 MB', type: 'PDF', uploadedAt: '2024-01-14', category: 'suplementos' },
-    { name: 'miniatura_entrenamiento.jpg', size: '456 KB', type: 'Imagen', uploadedAt: '2024-01-13', category: 'entrenamientos' }
+    { 
+      id: '1',
+      name: 'receta_batido_proteico.pdf', 
+      size: '2.3 MB', 
+      type: 'PDF', 
+      uploadedAt: '2024-01-15', 
+      category: 'recetas',
+      url: '/uploads/receta_batido_proteico.pdf'
+    },
+    { 
+      id: '2',
+      name: 'guia_suplementos.pdf', 
+      size: '1.8 MB', 
+      type: 'PDF', 
+      uploadedAt: '2024-01-14', 
+      category: 'suplementos',
+      url: '/uploads/guia_suplementos.pdf'
+    },
+    { 
+      id: '3',
+      name: 'miniatura_entrenamiento.jpg', 
+      size: '456 KB', 
+      type: 'Imagen', 
+      uploadedAt: '2024-01-13', 
+      category: 'entrenamientos',
+      url: '/uploads/miniatura_entrenamiento.jpg'
+    }
   ]);
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const [isUploading, setIsUploading] = useState(false);
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const uploadedFiles = event.target.files;
-    if (uploadedFiles) {
-      Array.from(uploadedFiles).forEach(file => {
+    if (!uploadedFiles || uploadedFiles.length === 0) return;
+
+    setIsUploading(true);
+
+    try {
+      // Simular upload - reemplazar con lógica real de upload
+      for (const file of Array.from(uploadedFiles)) {
         const newFile = {
+          id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
           name: file.name,
           size: `${(file.size / 1024 / 1024).toFixed(1)} MB`,
           type: file.type.includes('pdf') ? 'PDF' : 'Imagen',
           uploadedAt: new Date().toISOString().split('T')[0],
-          category: 'general'
+          category: 'general',
+          url: URL.createObjectURL(file) // Temporal - reemplazar con URL real
         };
+        
         setFiles(prev => [newFile, ...prev]);
-      });
+      }
+    } catch (error) {
+      console.error('Error uploading files:', error);
+      alert('Error al subir archivos. Intenta nuevamente.');
+    } finally {
+      setIsUploading(false);
+      // Reset input
+      event.target.value = '';
     }
+  };
+
+  const handleDeleteFile = (fileId: string) => {
+    if (confirm('¿Estás seguro de que quieres eliminar este archivo?')) {
+      setFiles(prev => prev.filter(file => file.id !== fileId));
+    }
+  };
+
+  const handleDownloadFile = (file: any) => {
+    // Implementar lógica de descarga real
+    const link = document.createElement('a');
+    link.href = file.url;
+    link.download = file.name;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold text-gray-900">Gestión de Archivos</h2>
-        <label className="bg-red-600 text-white px-4 py-2 rounded-md text-sm !rounded-button hover:bg-red-700 transition-colors cursor-pointer">
-          <i className="ri-upload-line mr-2"></i>
-          Subir Archivo
+        <label className={`px-4 py-2 rounded-md text-sm transition-colors cursor-pointer ${
+          isUploading 
+            ? 'bg-gray-400 text-white cursor-not-allowed' 
+            : 'bg-red-600 text-white hover:bg-red-700'
+        }`}>
+          <i className={`${isUploading ? 'ri-loader-line animate-spin' : 'ri-upload-line'} mr-2`}></i>
+          {isUploading ? 'Subiendo...' : 'Subir Archivo'}
           <input
             type="file"
             multiple
-            accept=".pdf,.jpg,.jpeg,.png"
+            accept=".pdf,.jpg,.jpeg,.png,.docx,.xlsx"
             onChange={handleFileUpload}
+            disabled={isUploading}
             className="hidden"
           />
         </label>
       </div>
 
       <div className="bg-white rounded-lg p-6 shadow-sm">
-        <h3 className="font-medium text-gray-900 mb-4">Archivos Recientes</h3>
+        <h3 className="font-medium text-gray-900 mb-4">Archivos del Sistema</h3>
         <div className="space-y-3">
           {files.length === 0 ? (
             <div className="text-center py-8">
               <i className="ri-file-line text-gray-400 text-4xl mb-2"></i>
               <p className="text-gray-600">No hay archivos subidos</p>
+              <p className="text-gray-500 text-sm mt-1">Sube archivos PDF, imágenes o documentos</p>
             </div>
           ) : (
-            files.map((file, index) => (
-              <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+            files.map((file) => (
+              <div key={file.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                 <div className="flex items-center space-x-3">
                   <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
                     file.type === 'PDF' ? 'bg-red-100' : 'bg-blue-100'
@@ -307,16 +373,46 @@ function FileManager() {
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <button className="w-8 h-8 flex items-center justify-center text-blue-600 hover:bg-blue-50 rounded">
+                  <button 
+                    onClick={() => handleDownloadFile(file)}
+                    className="w-8 h-8 flex items-center justify-center text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                    title="Descargar archivo"
+                  >
                     <i className="ri-download-line"></i>
                   </button>
-                  <button className="w-8 h-8 flex items-center justify-center text-red-600 hover:bg-red-50 rounded">
+                  <button 
+                    onClick={() => handleDeleteFile(file.id)}
+                    className="w-8 h-8 flex items-center justify-center text-red-600 hover:bg-red-50 rounded transition-colors"
+                    title="Eliminar archivo"
+                  >
                     <i className="ri-delete-bin-line"></i>
                   </button>
                 </div>
               </div>
             ))
           )}
+        </div>
+      </div>
+
+      {/* File Statistics */}
+      <div className="bg-white rounded-lg p-6 shadow-sm">
+        <h3 className="font-medium text-gray-900 mb-4">Estadísticas de Archivos</h3>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="text-center p-3 bg-blue-50 rounded-lg">
+            <i className="ri-file-line text-blue-600 text-2xl mb-2"></i>
+            <p className="text-2xl font-bold text-blue-600">{files.length}</p>
+            <p className="text-sm text-blue-600">Total Archivos</p>
+          </div>
+          <div className="text-center p-3 bg-green-50 rounded-lg">
+            <i className="ri-hard-drive-line text-green-600 text-2xl mb-2"></i>
+            <p className="text-2xl font-bold text-green-600">
+              {files.reduce((total, file) => {
+                const size = parseFloat(file.size.split(' ')[0]);
+                return total + size;
+              }, 0).toFixed(1)}
+            </p>
+            <p className="text-sm text-green-600">MB Usados</p>
+          </div>
         </div>
       </div>
     </div>
