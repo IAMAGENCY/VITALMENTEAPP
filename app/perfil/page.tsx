@@ -288,7 +288,7 @@ export default function PerfilPage() {
   }
 
   const imc = getIMC();
-  const imcCategory = getIMCCategory(parseFloat(imc));
+  const imcCategory = imc ? getIMCCategory(parseFloat(imc)) : { text: 'N/A', color: 'text-gray-600' };
 
   return (
     <div className="min-h-screen bg-gray-50">
