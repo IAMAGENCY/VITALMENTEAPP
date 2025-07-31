@@ -159,7 +159,7 @@ export default function PerfilPage() {
       muy_activo: 1.9
     };
 
-    const calorias = tmb * factoresActividad[user.actividad];
+    const calorias = tmb * factoresActividad[user.actividad as keyof typeof factoresActividad];
 
     let caloriasObjetivo = calorias;
     if (user.objetivo === 'perder') {
