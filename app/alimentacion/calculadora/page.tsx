@@ -78,7 +78,7 @@ export default function CalculadoraMacrosPage() {
       muy_activo: 1.9
     };
 
-    const calorias = tmb * factoresActividad[formData.actividad];
+    const calorias = tmb * factoresActividad[formData.actividad as keyof typeof factoresActividad];
 
     // Ajuste por objetivo
     let caloriasObjetivo = calorias;
