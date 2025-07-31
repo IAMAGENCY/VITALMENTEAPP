@@ -509,7 +509,7 @@ function LoginForm({ onLoginSuccess }: { onLoginSuccess: () => void }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleLogin = async (e) => {
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!email.trim()) {
       setError('Ingresa tu email');
@@ -539,7 +539,7 @@ function LoginForm({ onLoginSuccess }: { onLoginSuccess: () => void }) {
       } else {
         setError('No se encontró una cuenta con este email');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('💥 Error en login:', error);
       setError('Error de conexión');
     } finally {
