@@ -12,7 +12,7 @@ export default function RegistroPage() {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState('');
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<any>({
     nombre: '',
     email: '',
     edad: '',
@@ -26,9 +26,9 @@ export default function RegistroPage() {
     preferencias: []
   });
 
-  const [errors, setErrors] = useState({});
+  const [errors, setErrors] = useState<any>({});
 
-  const handleInputChange = (e) => {
+  const handleInputChange = (e: any) => {
     const { name, value, type, checked } = e.target;
     
     if (type === 'checkbox') {
@@ -46,7 +46,7 @@ export default function RegistroPage() {
     }
   };
 
-  const validateStep = (stepNumber) => {
+  const validateStep = (stepNumber: number) => {
     const newErrors = {};
     
     if (stepNumber === 1) {
