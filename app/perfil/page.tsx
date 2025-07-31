@@ -444,8 +444,8 @@ export default function PerfilPage() {
                   <h4 className="text-sm font-medium text-gray-700 mb-2">Condiciones Especiales</h4>
                   <div className="flex flex-wrap gap-2">
                     {userData.preferencias.map((preference: string) => (
-                      <span key={condition} className="px-2 py-1 bg-red-100 text-red-800 text-xs rounded-full">
-                        {condition}
+                      <span key={preference} className="px-2 py-1 bg-emerald-100 text-emerald-800 text-xs rounded-full">
+                        {preference}
                       </span>
                     ))}
                   </div>
