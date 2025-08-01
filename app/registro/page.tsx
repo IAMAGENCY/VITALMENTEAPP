@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -7,12 +6,31 @@ import TabBar from '@/components/TabBar';
 import { useRouter } from 'next/navigation';
 import { dbOperations } from '@/lib/supabase';
 
+// Definir interfaces para los tipos
+interface FormData {
+  nombre: string;
+  email: string;
+  edad: string;
+  peso: string;
+  altura: string;
+  genero: string;
+  actividad: string;
+  objetivo: string;
+  experiencia: string;
+  condiciones: string[];
+  preferencias: string[];
+}
+
+interface FormErrors {
+  [key: string]: string;
+}
+
 export default function RegistroPage() {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState('');
-  const [formData, setFormData] = useState<any>({
+  const [formData, setFormData] = useState<FormData>({
     nombre: '',
     email: '',
     edad: '',
@@ -26,38 +44,39 @@ export default function RegistroPage() {
     preferencias: []
   });
 
-  const [errors, setErrors] = useState<any>({});
+  const [errors, setErrors] = useState<FormErrors>({});
 
-  const handleInputChange = (e: any) => {
-    const { name, value, type, checked } = e.target;
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value, type } = e.target;
+    const checked = (e.target as HTMLInputElement).checked;
     
     if (type === 'checkbox') {
-      setFormData(prev => ({
+      setFormData((prev: FormData) => ({
         ...prev,
         [name]: checked 
-          ? [...prev[name], value]
-          : prev[name].filter(item => item !== value)
+          ? [...prev[name as keyof FormData] as string[], value]
+          : (prev[name as keyof FormData] as string[]).filter((item: string) => item !== value)
       }));
     } else {
-      setFormData(prev => ({
+      setFormData((prev: FormData) => ({
         ...prev,
         [name]: value
       }));
     }
   };
 
-  const validateStep = (stepNumber: number) => {
-    const newErrors = {};
+  const validateStep = (stepNumber: number): boolean => {
+    const newErrors: FormErrors = {};
     
     if (stepNumber === 1) {
       if (!formData.nombre.trim()) newErrors.nombre = 'El nombre es requerido';
       if (!formData.email.trim()) newErrors.email = 'El email es requerido';
-      if (!formData.edad || formData.edad < 1) newErrors.edad = 'La edad es requerida';
+      if (!formData.edad || parseInt(formData.edad) < 1) newErrors.edad = 'La edad es requerida';
     }
     
     if (stepNumber === 2) {
-      if (!formData.peso || formData.peso <= 0) newErrors.peso = 'El peso es requerido';
-      if (!formData.altura || formData.altura <= 0) newErrors.altura = 'La altura es requerida';
+      if (!formData.peso || parseFloat(formData.peso) <= 0) newErrors.peso = 'El peso es requerido';
+      if (!formData.altura || parseInt(formData.altura) <= 0) newErrors.altura = 'La altura es requerida';
     }
     
     setErrors(newErrors);
@@ -109,9 +128,9 @@ export default function RegistroPage() {
 
       // Verificar si el usuario ya existe por email
       const { data: existingUsers } = await dbOperations.getUsers();
-      const existingUser = existingUsers?.find(u => u.email === userData.email);
+      const existingUser = existingUsers?.find((u: any) => u.email === userData.email);
 
-      let finalUser;
+      let finalUser: any;
 
       if (existingUser) {
         setConnectionStatus('🔄 Usuario encontrado - Actualizando datos...');
@@ -166,7 +185,7 @@ export default function RegistroPage() {
         router.push('/perfil');
       }, 1500);
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('💥 ERROR COMPLETO:', error);
       
       // MOSTRAR ERROR ESPECÍFICO AL USUARIO
