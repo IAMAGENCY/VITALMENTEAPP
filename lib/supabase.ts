@@ -47,7 +47,18 @@ export interface Alimento {
 }
 
 // Alias para compatibilidad con código existente
-export interface Food extends Alimento {}
+export interface Food {
+  id: string;
+  name: string;                  // Mapea a 'nombre'
+  category: string;              // Mapea a 'categoria'
+  calories_per_100g: number;     // Mapea a 'calorias_por_100g'
+  protein_per_100g: number;      // Mapea a 'proteinas_por_100g'
+  carbs_per_100g: number;        // Mapea a 'carbohidratos_por_100g'
+  fat_per_100g: number;          // Mapea a 'grasas_por_100g'
+  fiber_per_100g?: number;       // Mapea a 'fibra_por_100g'
+  is_custom?: boolean;           // Campo adicional para alimentos personalizados
+  created_at?: string;
+}
 
 export interface RegistroEjercicio {
   id: string;
@@ -177,7 +188,58 @@ export const dbOperations = {
       .select('*')
       .order('nombre');
     
-    return { data, error };
+    // Mapear los datos del español al inglés para compatibilidad
+    const mappedData = data?.map(item => ({
+      id: item.id,
+      name: item.nombre,
+      category: item.categoria,
+      calories_per_100g: item.calorias_por_100g,
+      protein_per_100g: item.proteinas_por_100g,
+      carbs_per_100g: item.carbohidratos_por_100g,
+      fat_per_100g: item.grasas_por_100g,
+      fiber_per_100g: item.fibra_por_100g,
+      is_custom: item.is_custom || false,
+      created_at: item.created_at
+    }));
+    
+    return { data: mappedData, error };
+  },
+
+  async createFood(foodData: Omit<Food, 'id' | 'created_at'>) {
+    // Mapear del inglés al español para la base de datos
+    const mappedData = {
+      nombre: foodData.name,
+      categoria: foodData.category,
+      calorias_por_100g: foodData.calories_per_100g,
+      proteinas_por_100g: foodData.protein_per_100g,
+      carbohidratos_por_100g: foodData.carbs_per_100g,
+      grasas_por_100g: foodData.fat_per_100g,
+      fibra_por_100g: foodData.fiber_per_100g || 0,
+      is_custom: foodData.is_custom || true,
+      created_at: new Date().toISOString()
+    };
+
+    const { data, error } = await supabase
+      .from('alimentos')
+      .insert([mappedData])
+      .select()
+      .single();
+
+    // Mapear la respuesta de vuelta al inglés
+    const mappedResponse = data ? {
+      id: data.id,
+      name: data.nombre,
+      category: data.categoria,
+      calories_per_100g: data.calorias_por_100g,
+      protein_per_100g: data.proteinas_por_100g,
+      carbs_per_100g: data.carbohidratos_por_100g,
+      fat_per_100g: data.grasas_por_100g,
+      fiber_per_100g: data.fibra_por_100g,
+      is_custom: data.is_custom,
+      created_at: data.created_at
+    } : null;
+
+    return { data: mappedResponse, error };
   },
 
   async getAllSupplements() {
