@@ -100,29 +100,29 @@ export default function BankManager({ onSelectFood, showAddFood = true }: BankMa
   const createLocalBackupData = async () => {
     const basicFoods: Food[] = [
       // Frutas básicas
-      { id: '1', name: 'Manzana', category: 'Frutas', calories_per_100g: 52, protein_per_100g: 0.3, carbs_per_100g: 14, fat_per_100g: 0.2, fiber_per_100g: 2.4, is_custom: false, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
-      { id: '2', name: 'Plátano', category: 'Frutas', calories_per_100g: 89, protein_per_100g: 1.1, carbs_per_100g: 23, fat_per_100g: 0.3, fiber_per_100g: 2.6, is_custom: false, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
-      { id: '3', name: 'Naranja', category: 'Frutas', calories_per_100g: 47, protein_per_100g: 0.9, carbs_per_100g: 12, fat_per_100g: 0.1, fiber_per_100g: 2.4, is_custom: false, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+      { id: '1', name: 'Manzana', category: 'Frutas', calories_per_100g: 52, protein_per_100g: 0.3, carbs_per_100g: 14, fat_per_100g: 0.2, fiber_per_100g: 2.4, is_custom: false, created_at: new Date().toISOString() },
+      { id: '2', name: 'Plátano', category: 'Frutas', calories_per_100g: 89, protein_per_100g: 1.1, carbs_per_100g: 23, fat_per_100g: 0.3, fiber_per_100g: 2.6, is_custom: false, created_at: new Date().toISOString() },
+      { id: '3', name: 'Naranja', category: 'Frutas', calories_per_100g: 47, protein_per_100g: 0.9, carbs_per_100g: 12, fat_per_100g: 0.1, fiber_per_100g: 2.4, is_custom: false, created_at: new Date().toISOString() },
       
       // Verduras básicas
-      { id: '4', name: 'Brócoli', category: 'Verduras', calories_per_100g: 34, protein_per_100g: 2.8, carbs_per_100g: 7, fat_per_100g: 0.4, fiber_per_100g: 2.6, is_custom: false, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
-      { id: '5', name: 'Espinaca', category: 'Verduras', calories_per_100g: 23, protein_per_100g: 2.9, carbs_per_100g: 3.6, fat_per_100g: 0.4, fiber_per_100g: 2.2, is_custom: false, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
-      { id: '6', name: 'Zanahoria', category: 'Verduras', calories_per_100g: 41, protein_per_100g: 0.9, carbs_per_100g: 10, fat_per_100g: 0.2, fiber_per_100g: 2.8, is_custom: false, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+      { id: '4', name: 'Brócoli', category: 'Verduras', calories_per_100g: 34, protein_per_100g: 2.8, carbs_per_100g: 7, fat_per_100g: 0.4, fiber_per_100g: 2.6, is_custom: false, created_at: new Date().toISOString() },
+      { id: '5', name: 'Espinaca', category: 'Verduras', calories_per_100g: 23, protein_per_100g: 2.9, carbs_per_100g: 3.6, fat_per_100g: 0.4, fiber_per_100g: 2.2, is_custom: false, created_at: new Date().toISOString() },
+      { id: '6', name: 'Zanahoria', category: 'Verduras', calories_per_100g: 41, protein_per_100g: 0.9, carbs_per_100g: 10, fat_per_100g: 0.2, fiber_per_100g: 2.8, is_custom: false, created_at: new Date().toISOString() },
       
       // Proteínas básicas
-      { id: '7', name: 'Pollo Pechuga', category: 'Proteínas', calories_per_100g: 165, protein_per_100g: 31, carbs_per_100g: 0, fat_per_100g: 3.6, fiber_per_100g: 0, is_custom: false, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
-      { id: '8', name: 'Huevo Entero', category: 'Proteínas', calories_per_100g: 155, protein_per_100g: 13, carbs_per_100g: 1.1, fat_per_100g: 11, fiber_per_100g: 0, is_custom: false, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
-      { id: '9', name: 'Atún en Agua', category: 'Proteínas', calories_per_100g: 184, protein_per_100g: 30, carbs_per_100g: 0, fat_per_100g: 6.3, fiber_per_100g: 0, is_custom: false, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+      { id: '7', name: 'Pollo Pechuga', category: 'Proteínas', calories_per_100g: 165, protein_per_100g: 31, carbs_per_100g: 0, fat_per_100g: 3.6, fiber_per_100g: 0, is_custom: false, created_at: new Date().toISOString() },
+      { id: '8', name: 'Huevo Entero', category: 'Proteínas', calories_per_100g: 155, protein_per_100g: 13, carbs_per_100g: 1.1, fat_per_100g: 11, fiber_per_100g: 0, is_custom: false, created_at: new Date().toISOString() },
+      { id: '9', name: 'Atún en Agua', category: 'Proteínas', calories_per_100g: 184, protein_per_100g: 30, carbs_per_100g: 0, fat_per_100g: 6.3, fiber_per_100g: 0, is_custom: false, created_at: new Date().toISOString() },
       
       // Carbohidratos básicos
-      { id: '10', name: 'Arroz Integral', category: 'Carbohidratos', calories_per_100g: 123, protein_per_100g: 2.6, carbs_per_100g: 23, fat_per_100g: 0.9, fiber_per_100g: 1.8, is_custom: false, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
-      { id: '11', name: 'Avena', category: 'Carbohidratos', calories_per_100g: 389, protein_per_100g: 17, carbs_per_100g: 66, fat_per_100g: 7, fiber_per_100g: 10.6, is_custom: false, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
-      { id: '12', name: 'Papa', category: 'Carbohidratos', calories_per_100g: 77, protein_per_100g: 2, carbs_per_100g: 17, fat_per_100g: 0.1, fiber_per_100g: 2.1, is_custom: false, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+      { id: '10', name: 'Arroz Integral', category: 'Carbohidratos', calories_per_100g: 123, protein_per_100g: 2.6, carbs_per_100g: 23, fat_per_100g: 0.9, fiber_per_100g: 1.8, is_custom: false, created_at: new Date().toISOString() },
+      { id: '11', name: 'Avena', category: 'Carbohidratos', calories_per_100g: 389, protein_per_100g: 17, carbs_per_100g: 66, fat_per_100g: 7, fiber_per_100g: 10.6, is_custom: false, created_at: new Date().toISOString() },
+      { id: '12', name: 'Papa', category: 'Carbohidratos', calories_per_100g: 77, protein_per_100g: 2, carbs_per_100g: 17, fat_per_100g: 0.1, fiber_per_100g: 2.1, is_custom: false, created_at: new Date().toISOString() },
       
       // Grasas básicas
-      { id: '13', name: 'Aguacate', category: 'Grasas', calories_per_100g: 160, protein_per_100g: 2, carbs_per_100g: 9, fat_per_100g: 15, fiber_per_100g: 6.7, is_custom: false, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
-      { id: '14', name: 'Almendras', category: 'Grasas', calories_per_100g: 579, protein_per_100g: 21, carbs_per_100g: 22, fat_per_100g: 50, fiber_per_100g: 12.5, is_custom: false, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
-      { id: '15', name: 'Aceite de Oliva', category: 'Grasas', calories_per_100g: 884, protein_per_100g: 0, carbs_per_100g: 0, fat_per_100g: 100, fiber_per_100g: 0, is_custom: false, created_at: new Date().toISOString(), updated_at: new Date().toISOString() }
+      { id: '13', name: 'Aguacate', category: 'Grasas', calories_per_100g: 160, protein_per_100g: 2, carbs_per_100g: 9, fat_per_100g: 15, fiber_per_100g: 6.7, is_custom: false, created_at: new Date().toISOString() },
+      { id: '14', name: 'Almendras', category: 'Grasas', calories_per_100g: 579, protein_per_100g: 21, carbs_per_100g: 22, fat_per_100g: 50, fiber_per_100g: 12.5, is_custom: false, created_at: new Date().toISOString() },
+      { id: '15', name: 'Aceite de Oliva', category: 'Grasas', calories_per_100g: 884, protein_per_100g: 0, carbs_per_100g: 0, fat_per_100g: 100, fiber_per_100g: 0, is_custom: false, created_at: new Date().toISOString() }
     ];
 
     setFoods(basicFoods);
@@ -183,8 +183,7 @@ export default function BankManager({ onSelectFood, showAddFood = true }: BankMa
         const localFood: Food = {
           id: Date.now().toString(),
           ...foodData,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+          created_at: new Date().toISOString()
         };
         const updatedFoods = [localFood, ...foods];
         setFoods(updatedFoods);
