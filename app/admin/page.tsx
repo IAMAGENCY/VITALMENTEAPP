@@ -44,7 +44,7 @@ export default function AdminPage() {
       const totalUsers = usersData.data?.length || 0;
       const premiumUsers = usersData.data?.filter(u => u.subscription_status === 'premium').length || 0;
       const totalFoods = foodsData.data?.length || 0;
-      const totalSupplements = supplementsData?.length || 0;
+      const totalSupplements = supplementsData?.data?.length || 0;
       
       // Calcular ingresos mensuales aproximados (premiumUsers * precio promedio)
       const monthlyRevenue = premiumUsers * 29900; // Precio promedio suscripción

@@ -681,3 +681,9 @@ export const dbOperations = {
     };
   }
 };
+
+export const initializeDatabase = async () => {
+  // Función para inicializar la base de datos si es necesario
+  console.log('Database initialization check...');
+  return true;
+};
