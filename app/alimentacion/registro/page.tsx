@@ -167,7 +167,7 @@ export default function RegistroPage() {
         });
       }
 
-      const { total } = await dbOperations.getTotalWaterIntake(userId, selectedDate);
+      const { total } = await dbOperations.getWaterIntake(userId, selectedDate);
       setWaterProgress(prev => ({ ...prev, current: total }));
     } catch (error) {
       console.error('Error loading day data:', error);
