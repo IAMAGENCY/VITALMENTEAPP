@@ -246,6 +246,21 @@ export const dbOperations = {
     return { data, error };
   },
 
+  async getUserByEmail(email: string) {
+    try {
+      const { data, error } = await supabase
+        .from('usuarios')
+        .select('*')
+        .eq('email', email.toLowerCase().trim())
+        .single();
+      
+      return { data, error };
+    } catch (error) {
+      console.error('Error getting user by email:', error);
+      return { data: null, error };
+    }
+  },
+
   async updateUserSubscription(userId: string, subscriptionStatus: 'free' | 'premium') {
     const { data, error } = await supabase
       .from('usuarios')
