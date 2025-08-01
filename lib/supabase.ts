@@ -17,10 +17,16 @@ export interface Usuario {
   peso?: number;
   altura?: number;
   nivel_actividad?: 'sedentario' | 'ligero' | 'moderado' | 'intenso' | 'muy_intenso';
-  objetivo?: 'perder_peso' | 'mantener_peso' | 'ganar_peso' | 'ganar_musculo';
+  objetivo?: 'perder_peso' | 'mantener_peso' | 'ganar_peso' | 'ganar_musculo' | string; // Permitir string adicional
   subscription_status?: 'free' | 'premium';
   created_at?: string;
   updated_at?: string;
+  // Campos adicionales para el registro
+  edad?: number;
+  actividad?: string;
+  experiencia?: string;
+  condiciones?: string[];
+  preferencias?: string[];
 }
 
 export interface AlimentoConsumo {
@@ -290,17 +296,64 @@ export const dbOperations = {
   },
 
   async updateUser(userId: string, updates: Partial<Usuario>) {
-    const { data, error } = await supabase
-      .from('usuarios')
-      .update({
+    try {
+      // Mapear campos del formulario a campos de la base de datos
+      const mappedUpdates: any = {
         ...updates,
         updated_at: new Date().toISOString()
-      })
-      .eq('id', userId)
-      .select()
-      .single();
-    
-    return { data, error };
+      };
+
+      // Mapear objetivo si es necesario
+      if (updates.objetivo) {
+        const objetivoMap: Record<string, string> = {
+          'perder_peso': 'perder_peso',
+          'mantener_peso': 'mantener_peso', 
+          'ganar_peso': 'ganar_peso',
+          'ganar_musculo': 'ganar_musculo',
+          'tonificar': 'ganar_musculo', // Mapear variaciones comunes
+          'definir': 'ganar_musculo',
+          'bajar_peso': 'perder_peso',
+          'subir_peso': 'ganar_peso'
+        };
+        
+        mappedUpdates.objetivo = objetivoMap[updates.objetivo] || updates.objetivo;
+      }
+
+      // Mapear actividad a nivel_actividad si es necesario
+      if (updates.actividad) {
+        const actividadMap: Record<string, string> = {
+          'sedentario': 'sedentario',
+          'ligero': 'ligero',  
+          'moderado': 'moderado',
+          'intenso': 'intenso',
+          'muy_intenso': 'muy_intenso',
+          'poco_activo': 'ligero',
+          'muy_activo': 'intenso',
+          'super_activo': 'muy_intenso'
+        };
+        
+        mappedUpdates.nivel_actividad = actividadMap[updates.actividad] || 'moderado';
+        delete mappedUpdates.actividad; // Remover campo temporal
+      }
+
+      // Remover campos que no existen en la tabla usuarios
+      delete mappedUpdates.experiencia;
+      delete mappedUpdates.condiciones;
+      delete mappedUpdates.preferencias;
+      delete mappedUpdates.edad;
+
+      const { data, error } = await supabase
+        .from('usuarios')
+        .update(mappedUpdates)
+        .eq('id', userId)
+        .select()
+        .single();
+
+      return { data, error };
+    } catch (error) {
+      console.error('Error updating user:', error);
+      return { data: null, error };
+    }
   },
 
   async getFoods() {
