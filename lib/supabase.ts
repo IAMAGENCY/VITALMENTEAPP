@@ -699,5 +699,6 @@ export interface Food {
   sugar_per_100g?: number;
   sodium_per_100g?: number;
   category: string;
+  is_custom?: boolean;
   created_at?: string;
 }
