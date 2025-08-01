@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -16,7 +15,12 @@ export default function CalculadoraMacrosPage() {
     objetivo: 'mantener'
   });
 
-  const [resultado, setResultado] = useState(null);
+  const [resultado, setResultado] = useState<{
+    calorias: number;
+    proteinas: number;
+    carbohidratos: number;
+    grasas: number;
+  } | null>(null);
   const [connectionStatus, setConnectionStatus] = useState('Verificando conexión...');
 
   useEffect(() => {
@@ -43,7 +47,7 @@ export default function CalculadoraMacrosPage() {
     }
   };
 
-  const handleInputChange = (e) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -78,7 +82,7 @@ export default function CalculadoraMacrosPage() {
       muy_activo: 1.9
     };
 
-    const calorias = tmb * factoresActividad[formData.actividad];
+    const calorias = tmb * factoresActividad[formData.actividad as keyof typeof factoresActividad];
 
     // Ajuste por objetivo
     let caloriasObjetivo = calorias;
