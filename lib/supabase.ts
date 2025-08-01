@@ -1,710 +1,522 @@
-
 import { createClient } from '@supabase/supabase-js';
 
-// CONFIGURACIÓN EMPRESARIAL DE SUPABASE - PRODUCCIÓN
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://jkxyioiajkyakftdeazt.supabase.co';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpreHlpb2lhamt5YWtmdGRlYXp0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM4MDY3MTcsImV4cCI6MjA2OTM4MjcxN30.d7VtQ3RkoJhZD0j0K8o2Uv0H860sRfqUC1-mwaKrsTw';
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-// VERIFICACIÓN EMPRESARIAL DE CONEXIÓN
-export const testSupabaseConnection = async () => {
-  try {
-    const { data: testData, error: testError } = await supabase
-      .from('users')
-      .select('id')
-      .limit(1);
+// Interfaces de tipos
+export interface Usuario {
+  id: string;
+  nombre: string;
+  apellidos: string;
+  email: string;
+  telefono?: string;
+  fecha_nacimiento?: string;
+  genero?: 'masculino' | 'femenino' | 'otro';
+  peso?: number;
+  altura?: number;
+  nivel_actividad?: 'sedentario' | 'ligero' | 'moderado' | 'intenso' | 'muy_intenso';
+  objetivo?: 'perder_peso' | 'mantener_peso' | 'ganar_peso' | 'ganar_musculo';
+  subscription_status?: 'free' | 'premium';
+  created_at?: string;
+  updated_at?: string;
+}
 
-    if (testError) {
-      console.error('Error conexion Supabase:', testError.message);
-      return { success: false, error: testError.message };
-    }
+export interface AlimentoConsumo {
+  id: string;
+  usuario_id: string;
+  alimento_id: string;
+  cantidad: number;
+  unidad: string;
+  comida_tipo: 'desayuno' | 'almuerzo' | 'cena' | 'merienda';
+  fecha: string;
+  created_at?: string;
+}
 
-    const { data: foods, error: foodsError } = await supabase
-      .from('foods')
-      .select('id, name')
-      .limit(5);
+export interface Alimento {
+  id: string;
+  nombre: string;
+  categoria: string;
+  calorias_por_100g: number;
+  proteinas_por_100g: number;
+  carbohidratos_por_100g: number;
+  grasas_por_100g: number;
+  fibra_por_100g?: number;
+  created_at?: string;
+}
 
-    if (foodsError) {
-      console.error('Tablas no creadas:', foodsError.message);
-      return { success: false, error: 'Ejecuta el script SQL empresarial' };
-    }
+export interface RegistroEjercicio {
+  id: string;
+  usuario_id: string;
+  ejercicio: string;
+  duracion_minutos: number;
+  intensidad: 'baja' | 'media' | 'alta';
+  calorias_quemadas?: number;
+  fecha: string;
+  created_at?: string;
+}
 
-    console.log('Supabase empresarial conectado correctamente');
-    console.log('Base de datos empresarial inicializada:', foods?.length || 0, 'elementos');
+export interface RegistroSalud {
+  id: string;
+  usuario_id: string;
+  peso?: number;
+  presion_sistolica?: number;
+  presion_diastolica?: number;
+  frecuencia_cardiaca?: number;
+  nivel_estres?: number;
+  calidad_sueno?: number;
+  horas_sueno?: number;
+  fecha: string;
+  created_at?: string;
+}
 
-    return {
-      success: true,
-      foodsCount: foods?.length || 0,
-      message: 'Supabase empresarial configurado correctamente'
-    };
+export interface Meta {
+  id: string;
+  usuario_id: string;
+  tipo: 'peso' | 'calorias' | 'ejercicio' | 'agua';
+  valor_objetivo: number;
+  valor_actual?: number;
+  unidad: string;
+  fecha_limite?: string;
+  completada?: boolean;
+  created_at?: string;
+}
 
-  } catch (error: any) {
-    console.error('Error de conexion empresarial:', error);
-    return { success: false, error: error.message };
-  }
-};
+export interface Plan {
+  id: string;
+  usuario_id: string;
+  nombre: string;
+  descripcion?: string;
+  tipo: 'alimentacion' | 'ejercicio' | 'mixto';
+  duracion_dias: number;
+  activo: boolean;
+  created_at?: string;
+}
 
-// OPERACIONES DE BASE DE DATOS EMPRESARIAL
+export interface Subscription {
+  id: string;
+  user_id: string;
+  status: 'active' | 'cancelled' | 'expired';
+  plan_type: 'premium';
+  start_date: string;
+  end_date?: string;
+  cancelled_at?: string;
+  created_at?: string;
+}
+
+// Operaciones de base de datos
 export const dbOperations = {
-  // === USUARIOS EMPRESARIAL ===
   async getUsers() {
     const { data, error } = await supabase
-      .from('users')
+      .from('usuarios')
       .select('*')
       .order('created_at', { ascending: false });
+    
     return { data, error };
   },
 
-  async createUser(userData: any) {
+  async getUserById(userId: string) {
     const { data, error } = await supabase
-      .from('users')
-      .insert([
-        {
-          ...userData,
-          created_at: new Date().toISOString()
-        }
-      ])
-      .select()
-      .single();
-    return { data, error };
-  },
-
-  async getUserById(id: string) {
-    const { data, error } = await supabase
-      .from('users')
+      .from('usuarios')
       .select('*')
-      .eq('id', id)
+      .eq('id', userId)
       .single();
+    
     return { data, error };
   },
 
-  async getUserByEmail(email: string) {
+  async updateUserSubscription(userId: string, subscriptionStatus: 'free' | 'premium') {
     const { data, error } = await supabase
-      .from('users')
-      .select('*')
-      .eq('email', email.toLowerCase())
-      .single();
-    return { data, error };
-  },
-
-  async updateUser(id: string, userData: any) {
-    const { data, error } = await supabase
-      .from('users')
-      .update(userData)
-      .eq('id', id)
-      .select()
-      .single();
-    return { data, error };
-  },
-
-  async updateUserSubscription(userId: string, subscriptionStatus: string) {
-    const { data, error } = await supabase
-      .from('users')
+      .from('usuarios')
       .update({ 
-        subscription_status: subscriptionStatus
+        subscription_status: subscriptionStatus,
+        updated_at: new Date().toISOString()
       })
       .eq('id', userId)
       .select()
       .single();
+    
     return { data, error };
   },
 
-  // === ALIMENTOS EMPRESARIAL ===
-  async getFoods() {
+  async createUser(userData: Omit<Usuario, 'id' | 'created_at' | 'updated_at'>) {
     const { data, error } = await supabase
-      .from('foods')
-      .select('*')
-      .order('name');
-    return { data, error };
-  },
-
-  async getAllFoods() {
-    const { data, error } = await supabase
-      .from('foods')
-      .select('*')
-      .order('name');
-    return { data, error };
-  },
-
-  async getFoodsByCategory(category: string) {
-    const { data, error } = await supabase
-      .from('foods')
-      .select('*')
-      .eq('category', category)
-      .order('name');
-    return { data, error };
-  },
-
-  async createFood(foodData: any) {
-    const { data, error } = await supabase
-      .from('foods')
-      .insert([
-        {
-          ...foodData,
-          created_at: new Date().toISOString()
-        }
-      ])
-      .select()
-      .single();
-    return { data, error };
-  },
-
-  async updateFood(id: string, foodData: any) {
-    const { data, error } = await supabase
-      .from('foods')
-      .update(foodData)
-      .eq('id', id)
-      .select()
-      .single();
-    return { data, error };
-  },
-
-  async deleteFood(id: string) {
-    const { error } = await supabase
-      .from('foods')
-      .delete()
-      .eq('id', id);
-    return { error };
-  },
-
-  // === COMIDAS DE USUARIO ===
-  async getUserMeals(userId: string) {
-    const { data, error } = await supabase
-      .from('user_meals')
-      .select(`
-        *,
-        foods (*)
-      `)
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false });
-    return { data, error };
-  },
-
-  async getUserMealsByDate(userId: string, date: string) {
-    const { data, error } = await supabase
-      .from('user_meals')
-      .select(`
-        *,
-        foods (*)
-      `)
-      .eq('user_id', userId)
-      .eq('date', date)
-      .order('created_at', { ascending: false });
-    return { data, error };
-  },
-
-  async getUserMealsByDateRange(userId: string, startDate: string, endDate: string) {
-    const { data, error } = await supabase
-      .from('user_meals')
-      .select(`
-        *,
-        foods (*)
-      `)
-      .eq('user_id', userId)
-      .gte('date', startDate)
-      .lte('date', endDate)
-      .order('date', { ascending: false });
-    return { data, error };
-  },
-
-  async createUserMeal(mealData: any) {
-    const { data, error } = await supabase
-      .from('user_meals')
-      .insert([
-        {
-          ...mealData,
-          created_at: new Date().toISOString()
-        }
-      ])
-      .select(`
-        *,
-        foods (*)
-      `)
-      .single();
-    return { data, error };
-  },
-
-  async updateUserMeal(id: string, mealData: any) {
-    const { data, error } = await supabase
-      .from('user_meals')
-      .update(mealData)
-      .eq('id', id)
-      .select(`
-        *,
-        foods (*)
-      `)
-      .single();
-    return { data, error };
-  },
-
-  async deleteUserMeal(id: string) {
-    const { error } = await supabase
-      .from('user_meals')
-      .delete()
-      .eq('id', id);
-    return { error };
-  },
-
-  // === INGESTA DE AGUA ===
-  async getWaterIntake(userId: string, date: string) {
-    const { data, error } = await supabase
-      .from('water_intake')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('date', date)
-      .order('created_at', { ascending: false });
-    return { data, error };
-  },
-
-  async getWaterIntakeByDateRange(userId: string, startDate: string, endDate: string) {
-    const { data, error } = await supabase
-      .from('water_intake')
-      .select('*')
-      .eq('user_id', userId)
-      .gte('date', startDate)
-      .lte('date', endDate)
-      .order('date', { ascending: false });
-    return { data, error };
-  },
-
-  async addWaterIntake(intakeData: any) {
-    const { data, error } = await supabase
-      .from('water_intake')
-      .insert([
-        {
-          ...intakeData,
-          created_at: new Date().toISOString()
-        }
-      ])
-      .select()
-      .single();
-    return { data, error };
-  },
-
-  // === SUPLEMENTOS EMPRESARIAL ===
-  async getAllSupplements() {
-    const { data, error } = await supabase
-      .from('supplements')
-      .select('*')
-      .eq('is_active', true)
-      .order('name');
-    return { data: data || [], error };
-  },
-
-  async getActiveSupplements() {
-    const { data, error } = await supabase
-      .from('supplements')
-      .select('*')
-      .eq('is_active', true)
-      .order('name');
-    return { data, error };
-  },
-
-  async getSupplementsByCategory(category: string) {
-    const { data, error } = await supabase
-      .from('supplements')
-      .select('*')
-      .eq('category', category)
-      .eq('is_active', true)
-      .order('name');
-    return { data, error };
-  },
-
-  async createSupplement(supplementData: any) {
-    const { data, error } = await supabase
-      .from('supplements')
-      .insert([
-        {
-          ...supplementData,
-          created_at: new Date().toISOString()
-        }
-      ])
-      .select()
-      .single();
-    return { data, error };
-  },
-
-  async updateSupplement(id: string, supplementData: any) {
-    const { data, error } = await supabase
-      .from('supplements')
-      .update(supplementData)
-      .eq('id', id)
-      .select()
-      .single();
-    return { data, error };
-  },
-
-  async deleteSupplement(id: string) {
-    const { error } = await supabase
-      .from('supplements')
-      .delete()
-      .eq('id', id);
-    return { error };
-  },
-
-  // === ENTRENAMIENTOS EMPRESARIAL ===
-  async getWorkoutLinks() {
-    const { data, error } = await supabase
-      .from('workout_links')
-      .select('*')
-      .order('created_at', { ascending: false });
-    return { data, error };
-  },
-
-  async getActiveWorkoutsByCategory(category: string) {
-    const { data, error } = await supabase
-      .from('workout_links')
-      .select('*')
-      .eq('category', category)
-      .eq('is_active', true)
-      .order('created_at', { ascending: false });
-    return { data, error };
-  },
-
-  async createWorkoutLink(workout: {
-    title: string;
-    description?: string;
-    url: string;
-    platform: 'youtube' | 'spotify';
-    category: string;
-    difficulty: 'principiante' | 'intermedio' | 'avanzado';
-    duration: number;
-    image_url?: string;
-    tags: string[];
-    is_active?: boolean;
-  }) {
-    const { data, error } = await supabase
-      .from('workout_links')
-      .insert([
-        {
-          ...workout,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }
-      ])
-      .select()
-      .single();
-    return { data, error };
-  },
-
-  async updateWorkoutLink(id: string, workout: any) {
-    const { data, error } = await supabase
-      .from('workout_links')
-      .update({
-        ...workout,
+      .from('usuarios')
+      .insert([{
+        ...userData,
+        created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
+      }])
+      .select()
+      .single();
+    
+    return { data, error };
+  },
+
+  async updateUser(userId: string, updates: Partial<Usuario>) {
+    const { data, error } = await supabase
+      .from('usuarios')
+      .update({
+        ...updates,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', userId)
+      .select()
+      .single();
+    
+    return { data, error };
+  }
+};
+
+// Operaciones de alimentación
+export const alimentacionOperations = {
+  async getAlimentos() {
+    const { data, error } = await supabase
+      .from('alimentos')
+      .select('*')
+      .order('nombre');
+    
+    return { data, error };
+  },
+
+  async getAlimentoById(alimentoId: string) {
+    const { data, error } = await supabase
+      .from('alimentos')
+      .select('*')
+      .eq('id', alimentoId)
+      .single();
+    
+    return { data, error };
+  },
+
+  async searchAlimentos(query: string) {
+    const { data, error } = await supabase
+      .from('alimentos')
+      .select('*')
+      .ilike('nombre', `%${query}%`)
+      .order('nombre')
+      .limit(20);
+    
+    return { data, error };
+  },
+
+  async getConsumosByUser(userId: string, fecha?: string) {
+    let query = supabase
+      .from('alimento_consumos')
+      .select(`
+        *,
+        alimentos (
+          nombre,
+          calorias_por_100g,
+          proteinas_por_100g,
+          carbohidratos_por_100g,
+          grasas_por_100g
+        )
+      `)
+      .eq('usuario_id', userId);
+
+    if (fecha) {
+      query = query.eq('fecha', fecha);
+    }
+
+    const { data, error } = await query.order('created_at', { ascending: false });
+    
+    return { data, error };
+  },
+
+  async createConsumo(consumoData: Omit<AlimentoConsumo, 'id' | 'created_at'>) {
+    const { data, error } = await supabase
+      .from('alimento_consumos')
+      .insert([{
+        ...consumoData,
+        created_at: new Date().toISOString()
+      }])
+      .select()
+      .single();
+    
+    return { data, error };
+  },
+
+  async deleteConsumo(consumoId: string) {
+    const { data, error } = await supabase
+      .from('alimento_consumos')
+      .delete()
+      .eq('id', consumoId);
+    
+    return { data, error };
+  }
+};
+
+// Operaciones de ejercicio
+export const ejercicioOperations = {
+  async getRegistrosByUser(userId: string, fecha?: string) {
+    let query = supabase
+      .from('registro_ejercicios')
+      .select('*')
+      .eq('usuario_id', userId);
+
+    if (fecha) {
+      query = query.eq('fecha', fecha);
+    }
+
+    const { data, error } = await query.order('created_at', { ascending: false });
+    
+    return { data, error };
+  },
+
+  async createRegistro(registroData: Omit<RegistroEjercicio, 'id' | 'created_at'>) {
+    const { data, error } = await supabase
+      .from('registro_ejercicios')
+      .insert([{
+        ...registroData,
+        created_at: new Date().toISOString()
+      }])
+      .select()
+      .single();
+    
+    return { data, error };
+  },
+
+  async deleteRegistro(registroId: string) {
+    const { data, error } = await supabase
+      .from('registro_ejercicios')
+      .delete()
+      .eq('id', registroId);
+    
+    return { data, error };
+  }
+};
+
+// Operaciones de salud
+export const saludOperations = {
+  async getRegistrosByUser(userId: string, fecha?: string) {
+    let query = supabase
+      .from('registro_salud')
+      .select('*')
+      .eq('usuario_id', userId);
+
+    if (fecha) {
+      query = query.eq('fecha', fecha);
+    }
+
+    const { data, error } = await query.order('fecha', { ascending: false });
+    
+    return { data, error };
+  },
+
+  async createRegistro(registroData: Omit<RegistroSalud, 'id' | 'created_at'>) {
+    const { data, error } = await supabase
+      .from('registro_salud')
+      .insert([{
+        ...registroData,
+        created_at: new Date().toISOString()
+      }])
+      .select()
+      .single();
+    
+    return { data, error };
+  },
+
+  async updateRegistro(registroId: string, updates: Partial<RegistroSalud>) {
+    const { data, error } = await supabase
+      .from('registro_salud')
+      .update(updates)
+      .eq('id', registroId)
+      .select()
+      .single();
+    
+    return { data, error };
+  }
+};
+
+// Operaciones de metas
+export const metasOperations = {
+  async getMetasByUser(userId: string) {
+    const { data, error } = await supabase
+      .from('metas')
+      .select('*')
+      .eq('usuario_id', userId)
+      .order('created_at', { ascending: false });
+    
+    return { data, error };
+  },
+
+  async createMeta(metaData: Omit<Meta, 'id' | 'created_at'>) {
+    const { data, error } = await supabase
+      .from('metas')
+      .insert([{
+        ...metaData,
+        created_at: new Date().toISOString()
+      }])
+      .select()
+      .single();
+    
+    return { data, error };
+  },
+
+  async updateMeta(metaId: string, updates: Partial<Meta>) {
+    const { data, error } = await supabase
+      .from('metas')
+      .update(updates)
+      .eq('id', metaId)
+      .select()
+      .single();
+    
+    return { data, error };
+  },
+
+  async deleteMeta(metaId: string) {
+    const { data, error } = await supabase
+      .from('metas')
+      .delete()
+      .eq('id', metaId);
+    
+    return { data, error };
+  }
+};
+
+// Operaciones de planes
+export const planesOperations = {
+  async getPlanesByUser(userId: string) {
+    const { data, error } = await supabase
+      .from('planes')
+      .select('*')
+      .eq('usuario_id', userId)
+      .order('created_at', { ascending: false });
+    
+    return { data, error };
+  },
+
+  async createPlan(planData: Omit<Plan, 'id' | 'created_at'>) {
+    const { data, error } = await supabase
+      .from('planes')
+      .insert([{
+        ...planData,
+        created_at: new Date().toISOString()
+      }])
+      .select()
+      .single();
+    
+    return { data, error };
+  },
+
+  async updatePlan(planId: string, updates: Partial<Plan>) {
+    const { data, error } = await supabase
+      .from('planes')
+      .update(updates)
+      .eq('id', planId)
+      .select()
+      .single();
+    
+    return { data, error };
+  },
+
+  async deletePlan(planId: string) {
+    const { data, error } = await supabase
+      .from('planes')
+      .delete()
+      .eq('id', planId);
+    
+    return { data, error };
+  }
+};
+
+// Operaciones de suscripción
+export const subscriptionOperations = {
+  async create(subscriptionData: Omit<Subscription, 'id' | 'created_at'>) {
+    const { data, error } = await supabase
+      .from('subscriptions')
+      .insert([{
+        ...subscriptionData,
+        created_at: new Date().toISOString()
+      }])
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  },
+
+  async getByUserId(userId: string) {
+    const { data, error } = await supabase
+      .from('subscriptions')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+    
+    if (error && error.code !== 'PGRST116') throw error;
+    return data;
+  },
+
+  async update(id: string, updates: Partial<Subscription>) {
+    const { data, error } = await supabase
+      .from('subscriptions')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  },
+
+  async cancel(id: string) {
+    const { data, error } = await supabase
+      .from('subscriptions')
+      .update({ 
+        status: 'cancelled', 
+        cancelled_at: new Date().toISOString() 
       })
       .eq('id', id)
       .select()
       .single();
-    return { data, error };
-  },
-
-  async deleteWorkoutLink(id: string) {
-    const { error } = await supabase
-      .from('workout_links')
-      .delete()
-      .eq('id', id);
-    return { error };
-  },
-
-  // === MINDFULNESS EMPRESARIAL ===
-  async getMindfulnessResources() {
-    const { data, error } = await supabase
-      .from('mindfulness_resources')
-      .select('*')
-      .eq('is_active', true)
-      .order('created_at', { ascending: false });
-    return { data, error };
-  },
-
-  async getMindfulnessResourcesByCategory(category: string) {
-    const { data, error } = await supabase
-      .from('mindfulness_resources')
-      .select('*')
-      .eq('category', category)
-      .eq('is_active', true)
-      .order('created_at', { ascending: false });
-    return { data, error };
-  },
-
-  async createMindfulnessResource(resourceData: any) {
-    const { data, error } = await supabase
-      .from('mindfulness_resources')
-      .insert([
-        {
-          ...resourceData,
-          created_at: new Date().toISOString()
-        }
-      ])
-      .select()
-      .single();
-    return { data, error };
-  },
-
-  async updateMindfulnessResource(id: string, resourceData: any) {
-    const { data, error } = await supabase
-      .from('mindfulness_resources')
-      .update(resourceData)
-      .eq('id', id)
-      .select()
-      .single();
-    return { data, error };
-  },
-
-  async deleteMindfulnessResource(id: string) {
-    const { error } = await supabase
-      .from('mindfulness_resources')
-      .delete()
-      .eq('id', id);
-    return { error };
-  },
-
-  // === PLANES DE NUTRICIÓN EMPRESARIAL ===
-  async getNutritionPlans() {
-    const { data, error } = await supabase
-      .from('nutrition_plans')
-      .select('*')
-      .eq('is_active', true)
-      .order('created_at', { ascending: false });
-    return { data, error };
-  },
-
-  async createNutritionPlan(planData: any) {
-    const { data, error } = await supabase
-      .from('nutrition_plans')
-      .insert([
-        {
-          ...planData,
-          created_at: new Date().toISOString()
-        }
-      ])
-      .select()
-      .single();
-    return { data, error };
-  },
-
-  async updateNutritionPlan(id: string, planData: any) {
-    const { data, error } = await supabase
-      .from('nutrition_plans')
-      .update(planData)
-      .eq('id', id)
-      .select()
-      .single();
-    return { data, error };
-  },
-
-  async deleteNutritionPlan(id: string) {
-    const { error } = await supabase
-      .from('nutrition_plans')
-      .delete()
-      .eq('id', id);
-    return { error };
-  },
-
-  // === ACTIVIDADES DE USUARIO ===
-  async getUserActivities(userId: string) {
-    const { data, error } = await supabase
-      .from('user_activities')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false });
-    return { data, error };
-  },
-
-  async getUserActivitiesByDateRange(userId: string, startDate: string, endDate: string) {
-    const { data, error } = await supabase
-      .from('user_activities')
-      .select('*')
-      .eq('user_id', userId)
-      .gte('date', startDate)
-      .lte('date', endDate)
-      .order('date', { ascending: false });
-    return { data, error };
-  },
-
-  async createUserActivity(activityData: any) {
-    const { data, error } = await supabase
-      .from('user_activities')
-      .insert([
-        {
-          ...activityData,
-          created_at: new Date().toISOString()
-        }
-      ])
-      .select()
-      .single();
-    return { data, error };
-  },
-
-  async updateUserActivity(id: string, activityData: any) {
-    const { data, error } = await supabase
-      .from('user_activities')
-      .update(activityData)
-      .eq('id', id)
-      .select()
-      .single();
-    return { data, error };
-  },
-
-  // === INSIGHTS DE USUARIO ===
-  async getUserInsights(userId: string, limit?: number) {
-    let query = supabase
-      .from('user_insights')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false });
-
-    if (limit) {
-      query = query.limit(limit);
-    }
-
-    const { data, error } = await query;
-    return { data, error };
-  },
-
-  async addUserInsight(insight: any) {
-    const { data, error } = await supabase
-      .from('user_insights')
-      .insert([
-        {
-          ...insight,
-          created_at: new Date().toISOString()
-        }
-      ])
-      .select()
-      .single();
-    return { data, error };
-  },
-
-  async markInsightAsViewed(id: string) {
-    const { data, error } = await supabase
-      .from('user_insights')
-      .update({ is_viewed: true })
-      .eq('id', id)
-      .select()
-      .single();
-    return { data, error };
-  },
-
-  // === RECOMENDACIONES DE SUPLEMENTOS ===
-  async getUserSupplementRecommendations(userId: string) {
-    const { data, error } = await supabase
-      .from('supplement_recommendations')
-      .select(`
-        *,
-        supplements (*)
-      `)
-      .eq('user_id', userId)
-      .eq('is_purchased', false)
-      .order('created_at', { ascending: false });
-    return { data, error };
-  },
-
-  async addSupplementRecommendation(recommendation: any) {
-    const { data, error } = await supabase
-      .from('supplement_recommendations')
-      .insert([
-        {
-          ...recommendation,
-          created_at: new Date().toISOString()
-        }
-      ])
-      .select()
-      .single();
-    return { data, error };
-  },
-
-  async markSupplementAsPurchased(id: string) {
-    const { data, error } = await supabase
-      .from('supplement_recommendations')
-      .update({ is_purchased: true })
-      .eq('id', id)
-      .select()
-      .single();
-    return { data, error };
-  },
-
-  // === FUNCIONES ADICIONALES PARA IA ===
-  async getUserNutritionTrends(userId: string, days: number) {
-    const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-    const { data, error } = await supabase
-      .from('user_meals')
-      .select(`
-        *,
-        foods (*)
-      `)
-      .eq('user_id', userId)
-      .gte('date', startDate)
-      .order('date', { ascending: false });
-    return { data, error };
-  },
-
-  async getUserActivityStats(userId: string, days: number) {
-    const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-    const { data, error } = await supabase
-      .from('user_activities')
-      .select('*')
-      .eq('user_id', userId)
-      .gte('date', startDate)
-      .order('date', { ascending: false });
-    return { data, error };
-  },
-
-  async getUserComplianceScore(userId: string, days: number) {
-    // Calculamos score de cumplimiento basado en actividades completadas
-    const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-
-    const [mealsResult, activitiesResult] = await Promise.all([
-      this.getUserMealsByDateRange(userId, startDate, new Date().toISOString().split('T')[0]),
-      this.getUserActivitiesByDateRange(userId, startDate, new Date().toISOString().split('T')[0])
-    ]);
-
-    const totalMeals = mealsResult.data?.length || 0;
-    const completedActivities = activitiesResult.data?.filter(a => a.completion_status === 'completed').length || 0;
-
-    // Calculamos un score basado en comidas registradas y actividades completadas
-    const expectedMeals = days * 3; // 3 comidas por día esperadas
-    const expectedActivities = Math.ceil(days / 7) * 3; // ~3 actividades por semana
-
-    const mealScore = Math.min(totalMeals / expectedMeals, 1) * 50;
-    const activityScore = Math.min(completedActivities / expectedActivities, 1) * 50;
-
-    const overallScore = Math.round(mealScore + activityScore);
-
-    return { 
-      overall_score: overallScore,
-      meal_score: Math.round(mealScore * 2),
-      activity_score: Math.round(activityScore * 2),
-      days_analyzed: days
-    };
+    
+    if (error) throw error;
+    return data;
   }
 };
 
-export const initializeDatabase = {
-  loadInitialFoods: async () => {
-    try {
-      console.log('Loading initial foods...');
-      // Aquí podrías cargar alimentos iniciales si es necesario
-      return true;
-    } catch (error) {
-      console.error('Error loading initial foods:', error);
-      return false;
-    }
-  }
+// Funciones auxiliares
+export const calcularCalorias = (alimento: Alimento, cantidad: number): number => {
+  return Math.round((alimento.calorias_por_100g * cantidad) / 100);
 };
-export interface Food {
-  id: number;
-  name: string;
-  calories_per_100g: number;
-  protein_per_100g: number;
-  carbs_per_100g: number;
-  fat_per_100g: number;
-  fiber_per_100g?: number;
-  sugar_per_100g?: number;
-  sodium_per_100g?: number;
-  category: string;
-  is_custom?: boolean;
-  created_at?: string;
-}
+
+export const calcularMacronutrientes = (alimento: Alimento, cantidad: number) => {
+  const factor = cantidad / 100;
+  return {
+    calorias: Math.round(alimento.calorias_por_100g * factor),
+    proteinas: Math.round(alimento.proteinas_por_100g * factor * 10) / 10,
+    carbohidratos: Math.round(alimento.carbohidratos_por_100g * factor * 10) / 10,
+    grasas: Math.round(alimento.grasas_por_100g * factor * 10) / 10,
+    fibra: alimento.fibra_por_100g ? Math.round(alimento.fibra_por_100g * factor * 10) / 10 : 0
+  };
+};
+
+export const calcularCaloriasPorEjercicio = (
+  ejercicio: string, 
+  duracionMinutos: number, 
+  intensidad: 'baja' | 'media' | 'alta',
+  pesoKg: number = 70
+): number => {
+  // MET (Metabolic Equivalent of Task) values aproximados
+  const metValues: Record<string, Record<string, number>> = {
+    'caminar': { baja: 3.0, media: 4.0, alta: 5.0 },
+    'correr': { baja: 6.0, media: 8.0, alta: 11.0 },
+    'nadar': { baja: 4.0, media: 6.0, alta: 8.0 },
+    'ciclismo': { baja: 4.0, media: 8.0, alta: 12.0 },
+    'pesas': { baja: 3.0, media: 5.0, alta: 6.0 },
+    'yoga': { baja: 2.5, media: 3.0, alta: 4.0 },
+    'aerobicos': { baja: 5.0, media: 7.0, alta: 9.0 }
+  };
+
+  const ejercicioKey = ejercicio.toLowerCase();
+  const met = metValues[ejercicioKey]?.[intensidad] || 4.0; // Valor por defecto
+
+  // Fórmula: Calorías = MET × peso (kg) × tiempo (horas)
+  const calorias = met * pesoKg * (duracionMinutos / 60);
+  
+  return Math.round(calorias);
+};
+
+export default supabase;
