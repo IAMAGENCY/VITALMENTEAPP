@@ -1,13 +1,10 @@
-import type { NextConfig } from "next";
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  experimental: {
+    serverActions: {
+      allowedOrigins: ['localhost:3000', 'vercel.app']
+    }
+  }
+}
 
-const nextConfig: NextConfig = {
-  output: "export",
-  images: {
-    unoptimized: true,
-  },
-  typescript: {
-    // ignoreBuildErrors: true,
-  },
-};
-
-export default nextConfig;
+module.exports = nextConfig
