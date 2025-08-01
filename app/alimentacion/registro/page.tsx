@@ -132,7 +132,7 @@ export default function RegistroPage() {
     if (!userId) return;
     
     try {
-      const { data: userMeals } = await dbOperations.getUserMeals(userId, selectedDate);
+      const { data: userMeals } = await dbOperations.getUserMeals(userId);
       
       if (userMeals && userMeals.length > 0) {
         const mealsByType = {
