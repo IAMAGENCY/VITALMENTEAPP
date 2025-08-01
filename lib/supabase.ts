@@ -682,12 +682,18 @@ export const dbOperations = {
   }
 };
 
-export const initializeDatabase = async () => {
-  // Función para inicializar la base de datos si es necesario
-  console.log('Database initialization check...');
-  return true;
+export const initializeDatabase = {
+  loadInitialFoods: async () => {
+    try {
+      console.log('Loading initial foods...');
+      // Aquí podrías cargar alimentos iniciales si es necesario
+      return true;
+    } catch (error) {
+      console.error('Error loading initial foods:', error);
+      return false;
+    }
+  }
 };
-
 export interface Food {
   id: number;
   name: string;
