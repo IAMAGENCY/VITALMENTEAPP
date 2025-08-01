@@ -46,6 +46,22 @@ export interface Alimento {
   created_at?: string;
 }
 
+// Interface para banco de alimentos
+export interface BancoAlimento {
+  id?: string;
+  nombre: string;
+  categoria: string;
+  calorias_por_100g: number;
+  proteinas: number;
+  carbohidratos: number;
+  grasas: number;
+  fibra?: number;
+  vitaminas?: string;
+  minerales?: string;
+  beneficios?: string;
+  created_at?: string;
+}
+
 // Alias para compatibilidad con código existente
 export interface Food {
   id: string;
@@ -326,6 +342,39 @@ export const alimentacionOperations = {
       .from('alimento_consumos')
       .delete()
       .eq('id', consumoId);
+    
+    return { data, error };
+  }
+};
+
+// Operaciones del banco de alimentos
+export const bancoAlimentosOperations = {
+  async getBancoAlimentos() {
+    const { data, error } = await supabase
+      .from('banco_alimentos')
+      .select('*')
+      .order('nombre');
+    
+    return { data, error };
+  },
+
+  async searchBancoAlimentos(query: string) {
+    const { data, error } = await supabase
+      .from('banco_alimentos')
+      .select('*')
+      .or(`nombre.ilike.%${query}%,categoria.ilike.%${query}%`)
+      .order('nombre')
+      .limit(20);
+    
+    return { data, error };
+  },
+
+  async getBancoAlimentosByCategory(categoria: string) {
+    const { data, error } = await supabase
+      .from('banco_alimentos')
+      .select('*')
+      .eq('categoria', categoria)
+      .order('nombre');
     
     return { data, error };
   }
@@ -648,7 +697,109 @@ export const initializeDatabase = async () => {
     // Insertar alimentos de ejemplo
     const alimentosEjemplo = [
       {
-        nombre: 'Arroz blanco cocido',
+        nombre: 'Aguacate',
+        categoria: 'Frutas',
+        calorias_por_100g: 160,
+        proteinas: 2,
+        carbohidratos: 9,
+        grasas: 15,
+        fibra: 7,
+        vitaminas: 'K, E, C',
+        minerales: 'Potasio, Folato',
+        beneficios: 'Grasas saludables, rico en fibra'
+      },
+      {
+        nombre: 'Espinacas',
+        categoria: 'Verduras',
+        calorias_por_100g: 23,
+        proteinas: 2.9,
+        carbohidratos: 3.6,
+        grasas: 0.4,
+        fibra: 2.2,
+        vitaminas: 'A, C, K',
+        minerales: 'Hierro, Calcio',
+        beneficios: 'Alto en hierro y antioxidantes'
+      },
+      {
+        nombre: 'Yogur Griego',
+        categoria: 'Lácteos',
+        calorias_por_100g: 59,
+        proteinas: 10,
+        carbohidratos: 3.6,
+        grasas: 0.4,
+        fibra: 0,
+        vitaminas: 'B12, B2',
+        minerales: 'Calcio, Probióticos',
+        beneficios: 'Alto en proteína, probióticos para digestión'
+      },
+      {
+        nombre: 'Almendras',
+        categoria: 'Frutos Secos',
+        calorias_por_100g: 579,
+        proteinas: 21,
+        carbohidratos: 22,
+        grasas: 50,
+        fibra: 12,
+        vitaminas: 'E, B2',
+        minerales: 'Magnesio, Calcio',
+        beneficios: 'Grasas saludables, vitamina E'
+      },
+      {
+        nombre: 'Lentejas',
+        categoria: 'Legumbres',
+        calorias_por_100g: 116,
+        proteinas: 9,
+        carbohidratos: 20,
+        grasas: 0.4,
+        fibra: 8,
+        vitaminas: 'Folato, B1',
+        minerales: 'Hierro, Potasio',
+        beneficios: 'Alta en proteína vegetal y fibra'
+      },
+      {
+        nombre: 'Batata',
+        categoria: 'Verduras',
+        calorias_por_100g: 86,
+        proteinas: 1.6,
+        carbohidratos: 20,
+        grasas: 0.1,
+        fibra: 3,
+        vitaminas: 'A, C',
+        minerales: 'Potasio, Manganeso',
+        beneficios: 'Rica en betacarotenos y fibra'
+      }
+    ];
+
+    // Insertar alimentos en el banco
+    const { data, error } = await supabase
+      .from('banco_alimentos')
+      .insert(alimentosIniciales.map(alimento => ({
+        ...alimento,
+        created_at: new Date().toISOString()
+      })))
+      .select();
+
+    if (error) {
+      console.error('❌ Error insertando alimentos iniciales:', error);
+      throw error;
+    }
+
+    console.log('✅ Alimentos iniciales cargados exitosamente:', data?.length);
+    return { 
+      success: true, 
+      message: `${data?.length || 0} alimentos cargados al banco`,
+      data 
+    };
+
+  } catch (error) {
+    console.error('❌ Error en loadInitialFoods:', error);
+    return { 
+      success: false, 
+      error,
+      message: 'Error cargando alimentos iniciales'
+    };
+  }
+}; 'Arroz blanco cocido',
         categoria: 'cereales',
         calorias_por_100g: 130,
         proteinas_por_100g: 2.7,
@@ -723,3 +874,102 @@ export const initializeDatabase = async () => {
     return { success: false, error };
   }
 };
+
+// ⭐ FUNCIÓN FALTANTE: loadInitialFoods (Esta es la que necesitabas)
+export const loadInitialFoods = async () => {
+  try {
+    console.log('🔄 Iniciando carga de alimentos al banco...');
+    
+    // Verificar si ya existen alimentos en el banco
+    const { data: existingFoods, error: checkError } = await supabase
+      .from('banco_alimentos')
+      .select('id')
+      .limit(1);
+
+    if (checkError) {
+      console.error('❌ Error verificando alimentos existentes:', checkError);
+      throw checkError;
+    }
+
+    // Si ya hay alimentos, no cargar más
+    if (existingFoods && existingFoods.length > 0) {
+      console.log('✅ Ya existen alimentos en el banco, omitiendo carga inicial');
+      return { success: true, message: 'Alimentos ya cargados previamente' };
+    }
+
+    // Datos de alimentos iniciales para el banco
+    const alimentosIniciales: Omit<BancoAlimento, 'id' | 'created_at'>[] = [
+      {
+        nombre: 'Manzana',
+        categoria: 'Frutas',
+        calorias_por_100g: 52,
+        proteinas: 0.3,
+        carbohidratos: 14,
+        grasas: 0.2,
+        fibra: 2.4,
+        vitaminas: 'C, A',
+        minerales: 'Potasio',
+        beneficios: 'Rica en antioxidantes, fibra y vitamina C'
+      },
+      {
+        nombre: 'Pechuga de Pollo',
+        categoria: 'Carnes',
+        calorias_por_100g: 165,
+        proteinas: 31,
+        carbohidratos: 0,
+        grasas: 3.6,
+        fibra: 0,
+        vitaminas: 'B3, B6',
+        minerales: 'Fósforo, Selenio',
+        beneficios: 'Excelente fuente de proteína magra'
+      },
+      {
+        nombre: 'Arroz Integral',
+        categoria: 'Cereales',
+        calorias_por_100g: 111,
+        proteinas: 2.6,
+        carbohidratos: 23,
+        grasas: 0.9,
+        fibra: 1.8,
+        vitaminas: 'B1, B3',
+        minerales: 'Manganeso, Magnesio',
+        beneficios: 'Carbohidrato complejo rico en fibra'
+      },
+      {
+        nombre: 'Brócoli',
+        categoria: 'Verduras',
+        calorias_por_100g: 34,
+        proteinas: 2.8,
+        carbohidratos: 7,
+        grasas: 0.4,
+        fibra: 2.6,
+        vitaminas: 'C, K, A',
+        minerales: 'Hierro, Potasio',
+        beneficios: 'Alto contenido de vitamina C y antioxidantes'
+      },
+      {
+        nombre: 'Salmón',
+        categoria: 'Pescados',
+        calorias_por_100g: 208,
+        proteinas: 20,
+        carbohidratos: 0,
+        grasas: 13,
+        fibra: 0,
+        vitaminas: 'D, B12',
+        minerales: 'Omega-3, Selenio',
+        beneficios: 'Rico en ácidos grasos omega-3'
+      },
+      {
+        nombre: 'Quinoa',
+        categoria: 'Cereales',
+        calorias_por_100g: 120,
+        proteinas: 4.4,
+        carbohidratos: 22,
+        grasas: 1.9,
+        fibra: 2.8,
+        vitaminas: 'B1, B2, E',
+        minerales: 'Hierro, Magnesio',
+        beneficios: 'Proteína completa, sin gluten'
+      },
+      {
+        nombre:

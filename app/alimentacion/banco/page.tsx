@@ -1,11 +1,9 @@
-
 'use client';
-
 import { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import TabBar from '@/components/TabBar';
 import BankManager from './BankManager';
-import { dbOperations, initializeDatabase } from '@/lib/supabase';
+import { dbOperations, initializeDatabase, loadInitialFoods } from '@/lib/supabase';
 
 export default function BancoPage() {
   const [isInitialized, setIsInitialized] = useState(false);
@@ -27,12 +25,12 @@ export default function BancoPage() {
         setIsInitialized(true);
       } else {
         console.log('🔄 Cargando banco de alimentos inicial...');
-        // Cargar alimentos iniciales
-        await initializeDatabase.loadInitialFoods();
+        // Cargar alimentos iniciales - LÍNEA CORREGIDA
+        await loadInitialFoods();
         setIsInitialized(true);
       }
     } catch (error) {
-      console.error('Error inicializando app:', error);
+      console.error('❌ Error inicializando app:', error);
       setIsInitialized(true); // Continuar aunque haya error
     } finally {
       setLoading(false);
@@ -72,11 +70,9 @@ export default function BancoPage() {
               Explora y crea alimentos personalizados
             </p>
           </div>
-
           <BankManager showAddFood={true} />
         </div>
       </main>
-
       <TabBar />
     </div>
   );
