@@ -122,6 +122,61 @@ export interface RegistroEjercicio {
   created_at?: string;
 }
 
+// Interfaces para entrenamientos
+export interface Workout {
+  id: string;
+  nombre: string;
+  descripcion?: string;
+  categoria: 'tren_superior' | 'tren_inferior' | 'core' | 'cardio' | 'funcional';
+  nivel: 'principiante' | 'intermedio' | 'avanzado';
+  duracion_minutos: number;
+  calorias_estimadas?: number;
+  equipamiento?: string;
+  activo: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface Exercise {
+  id: string;
+  nombre: string;
+  descripcion?: string;
+  grupo_muscular: string;
+  equipamiento?: string;
+  instrucciones?: string;
+  imagen_url?: string;
+  video_url?: string;
+  created_at?: string;
+}
+
+export interface WorkoutExercise {
+  id: string;
+  workout_id: string;
+  exercise_id: string;
+  orden: number;
+  series: number;
+  repeticiones?: number;
+  tiempo_segundos?: number;
+  peso_kg?: number;
+  descanso_segundos?: number;
+  notas?: string;
+  created_at?: string;
+  exercises?: Exercise;
+}
+
+export interface UserWorkout {
+  id: string;
+  user_id: string;
+  workout_id: string;
+  fecha: string;
+  duracion_minutos?: number;
+  calorias_quemadas?: number;
+  completado: boolean;
+  notas?: string;
+  created_at?: string;
+  workouts?: Workout;
+}
+
 export interface RegistroSalud {
   id: string;
   usuario_id: string;
@@ -299,7 +354,138 @@ export const dbOperations = {
     return { data, error };
   },
 
-  // NUEVAS FUNCIONES REQUERIDAS POR LA APP
+  // FUNCIONES DE ENTRENAMIENTO - NUEVAS REQUERIDAS
+
+  // Función principal para obtener entrenamientos activos por categoría
+  async getActiveWorkoutsByCategory(categoria: string) {
+    try {
+      const { data, error } = await supabase
+        .from('workouts')
+        .select(`
+          *,
+          workout_exercises (
+            *,
+            exercises (
+              id,
+              nombre,
+              descripcion,
+              grupo_muscular,
+              equipamiento,
+              instrucciones
+            )
+          )
+        `)
+        .eq('categoria', categoria)
+        .eq('activo', true)
+        .order('created_at', { ascending: false });
+
+      return { data: data || [], error };
+    } catch (error) {
+      console.error('Error getting active workouts by category:', error);
+      return { data: [], error };
+    }
+  },
+
+  // Función para obtener todos los entrenamientos
+  async getAllWorkouts() {
+    try {
+      const { data, error } = await supabase
+        .from('workouts')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      return { data: data || [], error };
+    } catch (error) {
+      console.error('Error getting all workouts:', error);
+      return { data: [], error };
+    }
+  },
+
+  // Función para obtener ejercicios por grupo muscular
+  async getExercisesByMuscleGroup(grupoMuscular: string) {
+    try {
+      const { data, error } = await supabase
+        .from('exercises')
+        .select('*')
+        .eq('grupo_muscular', grupoMuscular)
+        .order('nombre');
+
+      return { data: data || [], error };
+    } catch (error) {
+      console.error('Error getting exercises by muscle group:', error);
+      return { data: [], error };
+    }
+  },
+
+  // Función para crear un entrenamiento de usuario
+  async createUserWorkout(workoutData: Omit<UserWorkout, 'id' | 'created_at'>) {
+    try {
+      const { data, error } = await supabase
+        .from('user_workouts')
+        .insert([{
+          ...workoutData,
+          created_at: new Date().toISOString()
+        }])
+        .select()
+        .single();
+
+      return { data, error };
+    } catch (error) {
+      console.error('Error creating user workout:', error);
+      return { data: null, error };
+    }
+  },
+
+  // Función para obtener entrenamientos del usuario
+  async getUserWorkouts(userId: string, fecha?: string) {
+    try {
+      let query = supabase
+        .from('user_workouts')
+        .select(`
+          *,
+          workouts (
+            id,
+            nombre,
+            descripcion,
+            categoria,
+            nivel,
+            duracion_minutos,
+            calorias_estimadas
+          )
+        `)
+        .eq('user_id', userId);
+
+      if (fecha) {
+        query = query.eq('fecha', fecha);
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: false });
+
+      return { data: data || [], error };
+    } catch (error) {
+      console.error('Error getting user workouts:', error);
+      return { data: [], error };
+    }
+  },
+
+  // Función para actualizar entrenamiento de usuario
+  async updateUserWorkout(userWorkoutId: string, updates: Partial<UserWorkout>) {
+    try {
+      const { data, error } = await supabase
+        .from('user_workouts')
+        .update(updates)
+        .eq('id', userWorkoutId)
+        .select()
+        .single();
+
+      return { data, error };
+    } catch (error) {
+      console.error('Error updating user workout:', error);
+      return { data: null, error };
+    }
+  },
+
+  // FUNCIONES EXISTENTES - MEJORADAS
 
   // Función para obtener comidas del usuario
   async getUserMeals(userId: string, date?: string) {
@@ -342,10 +528,10 @@ export const dbOperations = {
         } : null
       }));
 
-      return { data: mappedData, error };
+      return { data: mappedData || [], error };
     } catch (error) {
       console.error('Error getting user meals:', error);
-      return { data: null, error };
+      return { data: [], error };
     }
   },
 
@@ -488,7 +674,7 @@ export const alimentacionOperations = {
       .select('*')
       .order('nombre');
     
-    return { data, error };
+    return { data: data || [], error };
   },
 
   async getAlimentoById(alimentoId: string) {
@@ -509,7 +695,7 @@ export const alimentacionOperations = {
       .order('nombre')
       .limit(20);
     
-    return { data, error };
+    return { data: data || [], error };
   },
 
   async getConsumosByUser(userId: string, fecha?: string) {
@@ -533,7 +719,7 @@ export const alimentacionOperations = {
 
     const { data, error } = await query.order('created_at', { ascending: false });
     
-    return { data, error };
+    return { data: data || [], error };
   },
 
   async createConsumo(consumoData: Omit<AlimentoConsumo, 'id' | 'created_at'>) {
@@ -567,7 +753,7 @@ export const bancoAlimentosOperations = {
       .select('*')
       .order('nombre');
     
-    return { data, error };
+    return { data: data || [], error };
   },
 
   async searchBancoAlimentos(query: string) {
@@ -578,7 +764,7 @@ export const bancoAlimentosOperations = {
       .order('nombre')
       .limit(20);
     
-    return { data, error };
+    return { data: data || [], error };
   },
 
   async getBancoAlimentosByCategory(categoria: string) {
@@ -588,11 +774,11 @@ export const bancoAlimentosOperations = {
       .eq('categoria', categoria)
       .order('nombre');
     
-    return { data, error };
+    return { data: data || [], error };
   }
 };
 
-// Operaciones de ejercicio
+// Operaciones de ejercicio - MEJORADAS
 export const ejercicioOperations = {
   async getRegistrosByUser(userId: string, fecha?: string) {
     let query = supabase
@@ -606,7 +792,7 @@ export const ejercicioOperations = {
 
     const { data, error } = await query.order('created_at', { ascending: false });
     
-    return { data, error };
+    return { data: data || [], error };
   },
 
   async createRegistro(registroData: Omit<RegistroEjercicio, 'id' | 'created_at'>) {
@@ -629,6 +815,34 @@ export const ejercicioOperations = {
       .eq('id', registroId);
     
     return { data, error };
+  },
+
+  // Nuevas funciones para entrenamientos estructurados
+  async getWorkoutsByCategory(categoria: string) {
+    const { data, error } = await supabase
+      .from('workouts')
+      .select('*')
+      .eq('categoria', categoria)
+      .eq('activo', true)
+      .order('nivel', { ascending: true });
+    
+    return { data: data || [], error };
+  },
+
+  async getWorkoutDetails(workoutId: string) {
+    const { data, error } = await supabase
+      .from('workouts')
+      .select(`
+        *,
+        workout_exercises (
+          *,
+          exercises (*)
+        )
+      `)
+      .eq('id', workoutId)
+      .single();
+    
+    return { data, error };
   }
 };
 
@@ -646,7 +860,7 @@ export const saludOperations = {
 
     const { data, error } = await query.order('fecha', { ascending: false });
     
-    return { data, error };
+    return { data: data || [], error };
   },
 
   async createRegistro(registroData: Omit<RegistroSalud, 'id' | 'created_at'>) {
@@ -683,7 +897,7 @@ export const metasOperations = {
       .eq('usuario_id', userId)
       .order('created_at', { ascending: false });
     
-    return { data, error };
+    return { data: data || [], error };
   },
 
   async createMeta(metaData: Omit<Meta, 'id' | 'created_at'>) {
@@ -729,7 +943,7 @@ export const planesOperations = {
       .eq('usuario_id', userId)
       .order('created_at', { ascending: false });
     
-    return { data, error };
+    return { data: data || [], error };
   },
 
   async createPlan(planData: Omit<Plan, 'id' | 'created_at'>) {
@@ -850,10 +1064,14 @@ export const calcularCaloriasPorEjercicio = (
     'ciclismo': { baja: 4.0, media: 8.0, alta: 12.0 },
     'pesas': { baja: 3.0, media: 5.0, alta: 6.0 },
     'yoga': { baja: 2.5, media: 3.0, alta: 4.0 },
-    'aerobicos': { baja: 5.0, media: 7.0, alta: 9.0 }
+    'aerobicos': { baja: 5.0, media: 7.0, alta: 9.0 },
+    'tren_superior': { baja: 4.0, media: 6.0, alta: 8.0 },
+    'tren_inferior': { baja: 5.0, media: 7.0, alta: 9.0 },
+    'core': { baja: 3.0, media: 5.0, alta: 7.0 },
+    'funcional': { baja: 4.0, media: 6.0, alta: 8.0 }
   };
 
-  const ejercicioKey = ejercicio.toLowerCase();
+  const ejercicioKey = ejercicio.toLowerCase().replace(/\s+/g, '_');
   const met = metValues[ejercicioKey]?.[intensidad] || 4.0;
   const calorias = met * pesoKg * (duracionMinutos / 60);
   
@@ -901,6 +1119,10 @@ export const initializeDatabase = async () => {
       return { success: false, error: userError };
     }
 
+    // Inicializar datos de entrenamientos
+    await initializeWorkoutData();
+
+    // Inicializar alimentos
     const alimentosEjemplo = [
       {
         nombre: 'Arroz blanco cocido',
@@ -978,6 +1200,175 @@ export const initializeDatabase = async () => {
   }
 };
 
+// Función para inicializar datos de entrenamientos
+export const initializeWorkoutData = async () => {
+  try {
+    console.log('🏋️ Inicializando datos de entrenamientos...');
+
+    // Verificar si ya existen entrenamientos
+    const { data: existingWorkouts } = await supabase
+      .from('workouts')
+      .select('id')
+      .limit(1);
+
+    if (existingWorkouts && existingWorkouts.length > 0) {
+      console.log('✅ Entrenamientos ya inicializados');
+      return { success: true, message: 'Entrenamientos ya existen' };
+    }
+
+    // Crear ejercicios base
+    const ejerciciosBase = [
+      {
+        nombre: 'Flexiones de pecho',
+        descripcion: 'Ejercicio básico para pecho, hombros y tríceps',
+        grupo_muscular: 'pecho',
+        equipamiento: 'ninguno',
+        instrucciones: 'Colócate en posición de plancha, baja el pecho hasta casi tocar el suelo y empuja hacia arriba',
+        created_at: new Date().toISOString()
+      },
+      {
+        nombre: 'Dominadas',
+        descripcion: 'Ejercicio para espalda y bíceps',
+        grupo_muscular: 'espalda',
+        equipamiento: 'barra',
+        instrucciones: 'Cuelga de una barra con las palmas hacia adelante, tira del cuerpo hacia arriba hasta que la barbilla pase la barra',
+        created_at: new Date().toISOString()
+      },
+      {
+        nombre: 'Sentadillas',
+        descripcion: 'Ejercicio fundamental para piernas y glúteos',
+        grupo_muscular: 'piernas',
+        equipamiento: 'ninguno',
+        instrucciones: 'De pie con pies al ancho de hombros, baja como si fueras a sentarte en una silla invisible',
+        created_at: new Date().toISOString()
+      },
+      {
+        nombre: 'Plancha',
+        descripcion: 'Fortalecimiento del core',
+        grupo_muscular: 'core',
+        equipamiento: 'ninguno',
+        instrucciones: 'Mantén el cuerpo recto apoyado en antebrazos y pies, contrae el abdomen',
+        created_at: new Date().toISOString()
+      }
+    ];
+
+    const { data: ejerciciosCreados, error: ejerciciosError } = await supabase
+      .from('exercises')
+      .insert(ejerciciosBase)
+      .select();
+
+    if (ejerciciosError) {
+      console.error('❌ Error creando ejercicios:', ejerciciosError);
+      return { success: false, error: ejerciciosError };
+    }
+
+    // Crear entrenamientos base
+    const entrenamientosBase = [
+      {
+        nombre: 'Rutina Tren Superior Básica',
+        descripcion: 'Entrenamiento completo para la parte superior del cuerpo',
+        categoria: 'tren_superior',
+        nivel: 'principiante',
+        duracion_minutos: 30,
+        calorias_estimadas: 200,
+        equipamiento: 'mínimo',
+        activo: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      },
+      {
+        nombre: 'Rutina Tren Superior Intermedia',
+        descripcion: 'Entrenamiento avanzado para la parte superior',
+        categoria: 'tren_superior',
+        nivel: 'intermedio',
+        duracion_minutos: 45,
+        calorias_estimadas: 300,
+        equipamiento: 'básico',
+        activo: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      },
+      {
+        nombre: 'Rutina Tren Inferior Básica',
+        descripcion: 'Fortalecimiento de piernas y glúteos',
+        categoria: 'tren_inferior',
+        nivel: 'principiante',
+        duracion_minutos: 25,
+        calorias_estimadas: 180,
+        equipamiento: 'ninguno',
+        activo: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      },
+      {
+        nombre: 'Core Explosivo',
+        descripcion: 'Rutina intensa para fortalecer el núcleo',
+        categoria: 'core',
+        nivel: 'intermedio',
+        duracion_minutos: 20,
+        calorias_estimadas: 150,
+        equipamiento: 'ninguno',
+        activo: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }
+    ];
+
+    const { data: entrenamientosCreados, error: entrenamientosError } = await supabase
+      .from('workouts')
+      .insert(entrenamientosBase)
+      .select();
+
+    if (entrenamientosError) {
+      console.error('❌ Error creando entrenamientos:', entrenamientosError);
+      return { success: false, error: entrenamientosError };
+    }
+
+    // Crear relaciones ejercicio-entrenamiento
+    if (ejerciciosCreados && entrenamientosCreados) {
+      const workoutExercises = [
+        {
+          workout_id: entrenamientosCreados[0].id, // Tren Superior Básica
+          exercise_id: ejerciciosCreados[0].id, // Flexiones
+          orden: 1,
+          series: 3,
+          repeticiones: 10,
+          descanso_segundos: 60,
+          created_at: new Date().toISOString()
+        },
+        {
+          workout_id: entrenamientosCreados[0].id,
+          exercise_id: ejerciciosCreados[1].id, // Dominadas
+          orden: 2,
+          series: 3,
+          repeticiones: 5,
+          descanso_segundos: 90,
+          created_at: new Date().toISOString()
+        }
+      ];
+
+      const { error: workoutExercisesError } = await supabase
+        .from('workout_exercises')
+        .insert(workoutExercises);
+
+      if (workoutExercisesError) {
+        console.log('⚠️ Error creando relaciones ejercicio-entrenamiento:', workoutExercisesError.message);
+      }
+    }
+
+    console.log('✅ Datos de entrenamientos inicializados correctamente');
+    return { 
+      success: true, 
+      message: 'Entrenamientos inicializados con éxito',
+      data: { ejercicios: ejerciciosCreados, entrenamientos: entrenamientosCreados }
+    };
+
+  } catch (error) {
+    console.error('❌ Error inicializando datos de entrenamientos:', error);
+    return { success: false, error };
+  }
+};
+
 // Función para cargar alimentos iniciales al banco de alimentos
 export const loadInitialFoods = async () => {
   try {
@@ -1036,6 +1427,32 @@ export const loadInitialFoods = async () => {
         vitaminas: 'B1, B3',
         minerales: 'Manganeso, Magnesio',
         beneficios: 'Carbohidrato complejo rico en fibra',
+        created_at: new Date().toISOString()
+      },
+      {
+        nombre: 'Brócoli',
+        categoria: 'Verduras',
+        calorias_por_100g: 34,
+        proteinas: 2.8,
+        carbohidratos: 7,
+        grasas: 0.4,
+        fibra: 2.6,
+        vitaminas: 'C, K, A',
+        minerales: 'Hierro, Calcio',
+        beneficios: 'Rico en antioxidantes y vitaminas',
+        created_at: new Date().toISOString()
+      },
+      {
+        nombre: 'Salmón',
+        categoria: 'Pescados',
+        calorias_por_100g: 208,
+        proteinas: 25,
+        carbohidratos: 0,
+        grasas: 12,
+        fibra: 0,
+        vitaminas: 'D, B12',
+        minerales: 'Omega-3, Selenio',
+        beneficios: 'Excelente fuente de omega-3 y proteína',
         created_at: new Date().toISOString()
       }
     ];
