@@ -65,14 +65,14 @@ export interface BancoAlimento {
 // Alias para compatibilidad con código existente
 export interface Food {
   id: string;
-  name: string;                  // Mapea a 'nombre'
-  category: string;              // Mapea a 'categoria'
-  calories_per_100g: number;     // Mapea a 'calorias_por_100g'
-  protein_per_100g: number;      // Mapea a 'proteinas_por_100g'
-  carbs_per_100g: number;        // Mapea a 'carbohidratos_por_100g'
-  fat_per_100g: number;          // Mapea a 'grasas_por_100g'
-  fiber_per_100g?: number;       // Mapea a 'fibra_por_100g'
-  is_custom?: boolean;           // Campo adicional para alimentos personalizados
+  name: string;
+  category: string;
+  calories_per_100g: number;
+  protein_per_100g: number;
+  carbs_per_100g: number;
+  fat_per_100g: number;
+  fiber_per_100g?: number;
+  is_custom?: boolean;
   created_at?: string;
 }
 
@@ -204,7 +204,6 @@ export const dbOperations = {
       .select('*')
       .order('nombre');
     
-    // Mapear los datos del español al inglés para compatibilidad
     const mappedData = data?.map(item => ({
       id: item.id,
       name: item.nombre,
@@ -222,7 +221,6 @@ export const dbOperations = {
   },
 
   async createFood(foodData: Omit<Food, 'id' | 'created_at'>) {
-    // Mapear del inglés al español para la base de datos
     const mappedData = {
       nombre: foodData.name,
       categoria: foodData.category,
@@ -241,7 +239,6 @@ export const dbOperations = {
       .select()
       .single();
 
-    // Mapear la respuesta de vuelta al inglés
     const mappedResponse = data ? {
       id: data.id,
       name: data.nombre,
@@ -631,7 +628,6 @@ export const calcularCaloriasPorEjercicio = (
   intensidad: 'baja' | 'media' | 'alta',
   pesoKg: number = 70
 ): number => {
-  // MET (Metabolic Equivalent of Task) values aproximados
   const metValues: Record<string, Record<string, number>> = {
     'caminar': { baja: 3.0, media: 4.0, alta: 5.0 },
     'correr': { baja: 6.0, media: 8.0, alta: 11.0 },
@@ -643,9 +639,7 @@ export const calcularCaloriasPorEjercicio = (
   };
 
   const ejercicioKey = ejercicio.toLowerCase();
-  const met = metValues[ejercicioKey]?.[intensidad] || 4.0; // Valor por defecto
-
-  // Fórmula: Calorías = MET × peso (kg) × tiempo (horas)
+  const met = metValues[ejercicioKey]?.[intensidad] || 4.0;
   const calorias = met * pesoKg * (duracionMinutos / 60);
   
   return Math.round(calorias);
@@ -658,7 +652,6 @@ export const initializeDatabase = async () => {
   try {
     console.log('🚀 Inicializando base de datos...');
 
-    // Verificar si ya existen datos
     const { data: existingUsers } = await supabase
       .from('usuarios')
       .select('id')
@@ -669,7 +662,6 @@ export const initializeDatabase = async () => {
       return { success: true, message: 'Base de datos ya contiene datos' };
     }
 
-    // Insertar usuario de ejemplo
     const { data: userData, error: userError } = await supabase
       .from('usuarios')
       .insert([{
@@ -694,112 +686,9 @@ export const initializeDatabase = async () => {
       return { success: false, error: userError };
     }
 
-    // Insertar alimentos de ejemplo
     const alimentosEjemplo = [
       {
-        nombre: 'Aguacate',
-        categoria: 'Frutas',
-        calorias_por_100g: 160,
-        proteinas: 2,
-        carbohidratos: 9,
-        grasas: 15,
-        fibra: 7,
-        vitaminas: 'K, E, C',
-        minerales: 'Potasio, Folato',
-        beneficios: 'Grasas saludables, rico en fibra'
-      },
-      {
-        nombre: 'Espinacas',
-        categoria: 'Verduras',
-        calorias_por_100g: 23,
-        proteinas: 2.9,
-        carbohidratos: 3.6,
-        grasas: 0.4,
-        fibra: 2.2,
-        vitaminas: 'A, C, K',
-        minerales: 'Hierro, Calcio',
-        beneficios: 'Alto en hierro y antioxidantes'
-      },
-      {
-        nombre: 'Yogur Griego',
-        categoria: 'Lácteos',
-        calorias_por_100g: 59,
-        proteinas: 10,
-        carbohidratos: 3.6,
-        grasas: 0.4,
-        fibra: 0,
-        vitaminas: 'B12, B2',
-        minerales: 'Calcio, Probióticos',
-        beneficios: 'Alto en proteína, probióticos para digestión'
-      },
-      {
-        nombre: 'Almendras',
-        categoria: 'Frutos Secos',
-        calorias_por_100g: 579,
-        proteinas: 21,
-        carbohidratos: 22,
-        grasas: 50,
-        fibra: 12,
-        vitaminas: 'E, B2',
-        minerales: 'Magnesio, Calcio',
-        beneficios: 'Grasas saludables, vitamina E'
-      },
-      {
-        nombre: 'Lentejas',
-        categoria: 'Legumbres',
-        calorias_por_100g: 116,
-        proteinas: 9,
-        carbohidratos: 20,
-        grasas: 0.4,
-        fibra: 8,
-        vitaminas: 'Folato, B1',
-        minerales: 'Hierro, Potasio',
-        beneficios: 'Alta en proteína vegetal y fibra'
-      },
-      {
-        nombre: 'Batata',
-        categoria: 'Verduras',
-        calorias_por_100g: 86,
-        proteinas: 1.6,
-        carbohidratos: 20,
-        grasas: 0.1,
-        fibra: 3,
-        vitaminas: 'A, C',
-        minerales: 'Potasio, Manganeso',
-        beneficios: 'Rica en betacarotenos y fibra'
-      }
-    ];
-
-    // Insertar alimentos en el banco
-    const { data, error } = await supabase
-      .from('banco_alimentos')
-      .insert(alimentosIniciales.map(alimento => ({
-        ...alimento,
-        created_at: new Date().toISOString()
-      })))
-      .select();
-
-    if (error) {
-      console.error('❌ Error insertando alimentos iniciales:', error);
-      throw error;
-    }
-
-    console.log('✅ Alimentos iniciales cargados exitosamente:', data?.length);
-    return { 
-      success: true, 
-      message: `${data?.length || 0} alimentos cargados al banco`,
-      data 
-    };
-
-  } catch (error) {
-    console.error('❌ Error en loadInitialFoods:', error);
-    return { 
-      success: false, 
-      error,
-      message: 'Error cargando alimentos iniciales'
-    };
-  }
-}; 'Arroz blanco cocido',
+        nombre: 'Arroz blanco cocido',
         categoria: 'cereales',
         calorias_por_100g: 130,
         proteinas_por_100g: 2.7,
@@ -835,7 +724,6 @@ export const initializeDatabase = async () => {
       console.error('❌ Error insertando alimentos:', alimentosError);
     }
 
-    // Insertar suplementos de ejemplo (si la tabla existe)
     const suplementosEjemplo = [
       {
         nombre: 'Proteína Whey',
@@ -875,12 +763,11 @@ export const initializeDatabase = async () => {
   }
 };
 
-// ⭐ FUNCIÓN FALTANTE: loadInitialFoods (Esta es la que necesitabas)
+// Función para cargar alimentos iniciales al banco de alimentos
 export const loadInitialFoods = async () => {
   try {
     console.log('🔄 Iniciando carga de alimentos al banco...');
     
-    // Verificar si ya existen alimentos en el banco
     const { data: existingFoods, error: checkError } = await supabase
       .from('banco_alimentos')
       .select('id')
@@ -891,14 +778,12 @@ export const loadInitialFoods = async () => {
       throw checkError;
     }
 
-    // Si ya hay alimentos, no cargar más
     if (existingFoods && existingFoods.length > 0) {
       console.log('✅ Ya existen alimentos en el banco, omitiendo carga inicial');
       return { success: true, message: 'Alimentos ya cargados previamente' };
     }
 
-    // Datos de alimentos iniciales para el banco
-    const alimentosIniciales: Omit<BancoAlimento, 'id' | 'created_at'>[] = [
+    const alimentosIniciales = [
       {
         nombre: 'Manzana',
         categoria: 'Frutas',
@@ -909,7 +794,8 @@ export const loadInitialFoods = async () => {
         fibra: 2.4,
         vitaminas: 'C, A',
         minerales: 'Potasio',
-        beneficios: 'Rica en antioxidantes, fibra y vitamina C'
+        beneficios: 'Rica en antioxidantes, fibra y vitamina C',
+        created_at: new Date().toISOString()
       },
       {
         nombre: 'Pechuga de Pollo',
@@ -921,7 +807,8 @@ export const loadInitialFoods = async () => {
         fibra: 0,
         vitaminas: 'B3, B6',
         minerales: 'Fósforo, Selenio',
-        beneficios: 'Excelente fuente de proteína magra'
+        beneficios: 'Excelente fuente de proteína magra',
+        created_at: new Date().toISOString()
       },
       {
         nombre: 'Arroz Integral',
@@ -933,43 +820,34 @@ export const loadInitialFoods = async () => {
         fibra: 1.8,
         vitaminas: 'B1, B3',
         minerales: 'Manganeso, Magnesio',
-        beneficios: 'Carbohidrato complejo rico en fibra'
-      },
-      {
-        nombre: 'Brócoli',
-        categoria: 'Verduras',
-        calorias_por_100g: 34,
-        proteinas: 2.8,
-        carbohidratos: 7,
-        grasas: 0.4,
-        fibra: 2.6,
-        vitaminas: 'C, K, A',
-        minerales: 'Hierro, Potasio',
-        beneficios: 'Alto contenido de vitamina C y antioxidantes'
-      },
-      {
-        nombre: 'Salmón',
-        categoria: 'Pescados',
-        calorias_por_100g: 208,
-        proteinas: 20,
-        carbohidratos: 0,
-        grasas: 13,
-        fibra: 0,
-        vitaminas: 'D, B12',
-        minerales: 'Omega-3, Selenio',
-        beneficios: 'Rico en ácidos grasos omega-3'
-      },
-      {
-        nombre: 'Quinoa',
-        categoria: 'Cereales',
-        calorias_por_100g: 120,
-        proteinas: 4.4,
-        carbohidratos: 22,
-        grasas: 1.9,
-        fibra: 2.8,
-        vitaminas: 'B1, B2, E',
-        minerales: 'Hierro, Magnesio',
-        beneficios: 'Proteína completa, sin gluten'
-      },
-      {
-        nombre:
+        beneficios: 'Carbohidrato complejo rico en fibra',
+        created_at: new Date().toISOString()
+      }
+    ];
+
+    const { data, error } = await supabase
+      .from('banco_alimentos')
+      .insert(alimentosIniciales)
+      .select();
+
+    if (error) {
+      console.error('❌ Error insertando alimentos iniciales:', error);
+      throw error;
+    }
+
+    console.log('✅ Alimentos iniciales cargados exitosamente:', data?.length);
+    return { 
+      success: true, 
+      message: `${data?.length || 0} alimentos cargados al banco`,
+      data 
+    };
+
+  } catch (error) {
+    console.error('❌ Error en loadInitialFoods:', error);
+    return { 
+      success: false, 
+      error,
+      message: 'Error cargando alimentos iniciales'
+    };
+  }
+};
