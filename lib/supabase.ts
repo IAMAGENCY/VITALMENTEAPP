@@ -29,6 +29,33 @@ export interface Usuario {
   preferencias?: string[];
 }
 
+// Interface para errores de Supabase
+export interface SupabaseError {
+  message: string;
+  details?: string;
+  hint?: string;
+  code?: string;
+}
+
+// Type guard para verificar si un error tiene message
+export const isSupabaseError = (error: any): error is SupabaseError => {
+  return error && typeof error === 'object' && 'message' in error;
+};
+
+// Función helper para obtener mensaje de error
+export const getErrorMessage = (error: any): string => {
+  if (isSupabaseError(error)) {
+    return error.message;
+  }
+  if (typeof error === 'string') {
+    return error;
+  }
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return 'Error desconocido';
+};
+
 export interface AlimentoConsumo {
   id: string;
   usuario_id: string;
@@ -260,10 +287,28 @@ export const dbOperations = {
         .eq('email', email.toLowerCase().trim())
         .single();
       
-      return { data, error };
+      // Retornar error tipificado
+      if (error) {
+        return { 
+          data: null, 
+          error: {
+            message: getErrorMessage(error),
+            details: error.details || '',
+            code: error.code || ''
+          } as SupabaseError
+        };
+      }
+
+      return { data, error: null };
     } catch (error) {
       console.error('Error getting user by email:', error);
-      return { data: null, error };
+      return { 
+        data: null, 
+        error: {
+          message: getErrorMessage(error),
+          details: 'Error buscando usuario por email'
+        } as SupabaseError
+      };
     }
   },
 
@@ -282,17 +327,40 @@ export const dbOperations = {
   },
 
   async createUser(userData: Omit<Usuario, 'id' | 'created_at' | 'updated_at'>) {
-    const { data, error } = await supabase
-      .from('usuarios')
-      .insert([{
-        ...userData,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }])
-      .select()
-      .single();
-    
-    return { data, error };
+    try {
+      const { data, error } = await supabase
+        .from('usuarios')
+        .insert([{
+          ...userData,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }])
+        .select()
+        .single();
+      
+      // Retornar error tipificado
+      if (error) {
+        return { 
+          data: null, 
+          error: {
+            message: getErrorMessage(error),
+            details: error.details || '',
+            code: error.code || ''
+          } as SupabaseError
+        };
+      }
+
+      return { data, error: null };
+    } catch (error) {
+      console.error('Error creating user:', error);
+      return { 
+        data: null, 
+        error: {
+          message: getErrorMessage(error),
+          details: 'Error interno del servidor'
+        } as SupabaseError
+      };
+    }
   },
 
   async updateUser(userId: string, updates: Partial<Usuario>) {
@@ -349,10 +417,28 @@ export const dbOperations = {
         .select()
         .single();
 
-      return { data, error };
+      // Retornar error tipificado
+      if (error) {
+        return { 
+          data: null, 
+          error: {
+            message: getErrorMessage(error),
+            details: error.details || '',
+            code: error.code || ''
+          } as SupabaseError
+        };
+      }
+
+      return { data, error: null };
     } catch (error) {
       console.error('Error updating user:', error);
-      return { data: null, error };
+      return { 
+        data: null, 
+        error: {
+          message: getErrorMessage(error),
+          details: 'Error interno del servidor'
+        } as SupabaseError
+      };
     }
   },
 
