@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -8,11 +7,24 @@ import Header from '@/components/Header';
 import TabBar from '@/components/TabBar';
 import Link from 'next/link';
 
+// Definir interfaces para los tipos
+interface UserData {
+  id: string;
+  nombre?: string;
+  email?: string;
+  [key: string]: any;
+}
+
+interface SubscriptionStatus {
+  isPremium: boolean;
+  history?: any;
+}
+
 export default function SuscripcionPage() {
-  const [userData, setUserData] = useState<any>(null);
+  const [userData, setUserData] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
   const [paymentLoading, setPaymentLoading] = useState(false);
-  const [subscriptionStatus, setSubscriptionStatus] = useState<any>(null);
+  const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus | null>(null);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'PSE' | 'CARD' | 'NEQUI'>('CARD');
   const [connectionStatus, setConnectionStatus] = useState<string | null>(null);
 
@@ -59,7 +71,8 @@ export default function SuscripcionPage() {
     try {
       // PRIMERO: Verificar que el usuario existe en la base de datos
       setConnectionStatus('🔍 Verificando usuario...');
-      const { data: userExists } = await subscriptionOperations.checkPremiumAccess(userData.id);
+      // CORREGIDO: checkPremiumAccess devuelve un boolean directamente
+      const userExists = await subscriptionOperations.checkPremiumAccess(userData.id);
 
       // SEGUNDO: Crear configuración de pago
       setConnectionStatus('💳 Preparando pago...');
@@ -100,7 +113,7 @@ export default function SuscripcionPage() {
       // CUARTO: Inicializar checkout de Wompi
       WompiUtils.initCheckout(
         paymentConfig,
-        async (transaction) => {
+        async (transaction: any) => {
           // Pago exitoso
           console.log('✅ Pago exitoso:', transaction);
           setConnectionStatus('✅ Pago aprobado, activando suscripción...');
@@ -125,13 +138,13 @@ export default function SuscripcionPage() {
               throw new Error('Error activando suscripción');
             }
 
-          } catch (error) {
+          } catch (error: any) {
             console.error('❌ Error post-pago:', error);
             alert('Pago procesado pero error activando suscripción. Contacta soporte.');
             setPaymentLoading(false);
           }
         },
-        (error) => {
+        (error: any) => {
           // Error en el pago
           console.error('❌ Error en el pago:', error);
           setConnectionStatus('❌ Error en el pago');
@@ -140,7 +153,7 @@ export default function SuscripcionPage() {
         }
       );
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Error iniciando pago:', error);
       setConnectionStatus(`❌ Error: ${error.message}`);
       alert(`Error: ${error.message}`);
