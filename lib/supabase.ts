@@ -76,6 +76,41 @@ export interface Food {
   created_at?: string;
 }
 
+// Interface para comidas de usuario
+export interface UserMeal {
+  id: string;
+  user_id: string;
+  food_id: string;
+  meal_type: 'desayuno' | 'almuerzo' | 'cena' | 'snack';
+  portion_grams: number;
+  date: string;
+  created_at?: string;
+  foods?: Food;
+}
+
+// Interface para consumo de agua
+export interface WaterIntake {
+  id: string;
+  user_id: string;
+  amount_ml: number;
+  date: string;
+  created_at?: string;
+}
+
+// Interface para insights de usuario
+export interface UserInsight {
+  id: string;
+  user_id: string;
+  title: string;
+  description: string;
+  recommendation: string;
+  confidence_score: number;
+  type: string;
+  is_viewed: boolean;
+  created_at: string;
+  updated_at?: string;
+}
+
 export interface RegistroEjercicio {
   id: string;
   usuario_id: string;
@@ -262,6 +297,186 @@ export const dbOperations = {
       .order('nombre');
     
     return { data, error };
+  },
+
+  // NUEVAS FUNCIONES REQUERIDAS POR LA APP
+
+  // Función para obtener comidas del usuario
+  async getUserMeals(userId: string, date?: string) {
+    try {
+      let query = supabase
+        .from('user_meals')
+        .select(`
+          *,
+          foods:alimentos(
+            id,
+            nombre,
+            categoria,
+            calorias_por_100g,
+            proteinas_por_100g,
+            carbohidratos_por_100g,
+            grasas_por_100g,
+            fibra_por_100g
+          )
+        `)
+        .eq('user_id', userId);
+
+      if (date) {
+        query = query.eq('date', date);
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: false });
+
+      // Mapear datos para compatibilidad
+      const mappedData = data?.map(meal => ({
+        ...meal,
+        foods: meal.foods ? {
+          id: meal.foods.id,
+          name: meal.foods.nombre,
+          category: meal.foods.categoria,
+          calories_per_100g: meal.foods.calorias_por_100g,
+          protein_per_100g: meal.foods.proteinas_por_100g,
+          carbs_per_100g: meal.foods.carbohidratos_por_100g,
+          fat_per_100g: meal.foods.grasas_por_100g,
+          fiber_per_100g: meal.foods.fibra_por_100g || 0
+        } : null
+      }));
+
+      return { data: mappedData, error };
+    } catch (error) {
+      console.error('Error getting user meals:', error);
+      return { data: null, error };
+    }
+  },
+
+  // Función para crear una comida de usuario
+  async createUserMeal(mealData: Omit<UserMeal, 'id' | 'created_at'>) {
+    try {
+      const { data, error } = await supabase
+        .from('user_meals')
+        .insert([{
+          ...mealData,
+          created_at: new Date().toISOString()
+        }])
+        .select()
+        .single();
+
+      return { data, error };
+    } catch (error) {
+      console.error('Error creating user meal:', error);
+      return { data: null, error };
+    }
+  },
+
+  // Función para eliminar una comida de usuario
+  async deleteUserMeal(mealId: string) {
+    try {
+      const { data, error } = await supabase
+        .from('user_meals')
+        .delete()
+        .eq('id', mealId);
+
+      return { data, error };
+    } catch (error) {
+      console.error('Error deleting user meal:', error);
+      return { data: null, error };
+    }
+  },
+
+  // Función para obtener consumo de agua
+  async getWaterIntake(userId: string, date: string) {
+    try {
+      const { data, error } = await supabase
+        .from('water_intake')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('date', date);
+
+      // Calcular total
+      const total = data?.reduce((sum, intake) => sum + intake.amount_ml, 0) || 0;
+      const result = [{ total_amount: total }];
+
+      return { data: result, error };
+    } catch (error) {
+      console.error('Error getting water intake:', error);
+      return { data: [{ total_amount: 0 }], error };
+    }
+  },
+
+  // Función para agregar consumo de agua
+  async addWaterIntake(waterData: Omit<WaterIntake, 'id' | 'created_at'>) {
+    try {
+      const { data, error } = await supabase
+        .from('water_intake')
+        .insert([{
+          ...waterData,
+          created_at: new Date().toISOString()
+        }])
+        .select()
+        .single();
+
+      return { data, error };
+    } catch (error) {
+      console.error('Error adding water intake:', error);
+      return { data: null, error };
+    }
+  },
+
+  // Función para obtener insights del usuario
+  async getUserInsights(userId: string, limit: number = 5) {
+    try {
+      const { data, error } = await supabase
+        .from('user_insights')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+      return { data: data || [], error };
+    } catch (error) {
+      console.error('Error getting user insights:', error);
+      // Devolver array vacío si la tabla no existe aún
+      return { data: [], error: null };
+    }
+  },
+
+  // Función para marcar insight como visto
+  async markInsightAsViewed(insightId: string) {
+    try {
+      const { data, error } = await supabase
+        .from('user_insights')
+        .update({ 
+          is_viewed: true,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', insightId)
+        .select()
+        .single();
+
+      return { data, error };
+    } catch (error) {
+      console.error('Error marking insight as viewed:', error);
+      return { data: null, error };
+    }
+  },
+
+  // Función para crear insight
+  async createUserInsight(insightData: Omit<UserInsight, 'id' | 'created_at'>) {
+    try {
+      const { data, error } = await supabase
+        .from('user_insights')
+        .insert([{
+          ...insightData,
+          created_at: new Date().toISOString()
+        }])
+        .select()
+        .single();
+
+      return { data, error };
+    } catch (error) {
+      console.error('Error creating user insight:', error);
+      return { data: null, error };
+    }
   }
 };
 

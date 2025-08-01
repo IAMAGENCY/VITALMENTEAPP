@@ -1,339 +1,305 @@
 import { dbOperations } from './supabase';
 
-// Sistema de IA para generar insights personalizados
+export interface InsightResult {
+  title: string;
+  description: string;
+  recommendation: string;
+  confidence_score: number;
+  type: 'nutrition' | 'hydration' | 'balance' | 'warning' | 'achievement';
+}
+
+export interface AnalysisResult {
+  total_insights: number;
+  insights: InsightResult[];
+  status: 'success' | 'error';
+  message?: string;
+}
+
 export class AIInsightsEngine {
-  
-  // Generar insights nutricionales basados en patrones
-  static async generateNutritionInsights(userId: string) {
+  private static readonly CALORIE_GOALS = {
+    sedentario: { masculino: 2000, femenino: 1600 },
+    ligero: { masculino: 2200, femenino: 1800 },
+    moderado: { masculino: 2400, femenino: 2000 },
+    intenso: { masculino: 2600, femenino: 2200 },
+    muy_intenso: { masculino: 2800, femenino: 2400 }
+  };
+
+  private static readonly MACRO_RATIOS = {
+    protein: { min: 0.15, max: 0.35 },
+    carbs: { min: 0.45, max: 0.65 },
+    fat: { min: 0.20, max: 0.35 }
+  };
+
+  private static readonly WATER_GOAL = 2000; // ml por día
+
+  static async generateAllInsights(userId: string): Promise<AnalysisResult> {
     try {
-      // Obtener datos nutricionales de los últimos 30 días
-      const { data: nutritionData } = await dbOperations.getUserNutritionTrends(userId, 30);
+      const insights: InsightResult[] = [];
       
-      if (!nutritionData || nutritionData.length === 0) {
-        return [];
-      }
-
-      const insights = [];
+      // Obtener datos del usuario
+      const { data: userData } = await dbOperations.getUserById(userId);
+      const today = new Date().toISOString().split('T')[0];
       
-      // Calcular promedios nutricionales
-      const dailyTotals = this.calculateDailyNutritionTotals(nutritionData);
-      const avgCalories = dailyTotals.reduce((sum, day) => sum + day.calories, 0) / dailyTotals.length;
-      const avgProtein = dailyTotals.reduce((sum, day) => sum + day.protein, 0) / dailyTotals.length;
-      const avgCarbs = dailyTotals.reduce((sum, day) => sum + day.carbs, 0) / dailyTotals.length;
-      const avgFat = dailyTotals.reduce((sum, day) => sum + day.fat, 0) / dailyTotals.length;
-
-      // Insight: Calorías muy bajas
-      if (avgCalories < 1200) {
-        insights.push({
-          user_id: userId,
-          insight_type: 'nutrition',
-          title: '⚠️ Calorías Insuficientes Detectadas',
-          description: `Tu promedio de ${Math.round(avgCalories)} calorías diarias está muy por debajo del mínimo recomendado (1200-1500).`,
-          recommendation: 'Agrega snacks nutritivos como frutos secos, aguacate, o batidos proteicos. Considera nuestros suplementos de proteína para aumentar calorías saludables.',
-          confidence_score: 0.95,
-          data_points: {
-            avg_calories: avgCalories,
-            target_min: 1200,
-            deficit: 1200 - avgCalories,
-            days_analyzed: 30
-          }
-        });
-      }
-
-      // Insight: Proteína insuficiente
-      if (avgProtein < 80) {
-        insights.push({
-          user_id: userId,
-          insight_type: 'nutrition',
-          title: '💪 Aumenta tu Consumo de Proteína',
-          description: `Con ${Math.round(avgProtein)}g diarios, necesitas más proteína para tus objetivos fitness.`,
-          recommendation: 'Incorpora más pollo, pescado, huevos o considera nuestra Proteína Whey Premium para alcanzar 1.5-2g por kg de peso corporal.',
-          confidence_score: 0.88,
-          data_points: {
-            avg_protein: avgProtein,
-            target_protein: 120,
-            deficit: 120 - avgProtein,
-            protein_sources: ['pollo', 'pescado', 'huevos', 'proteína_whey']
-          }
-        });
-      }
-
-      // Insight: Desequilibrio de macros
-      const proteinPercentage = (avgProtein * 4 / avgCalories) * 100;
-      const carbPercentage = (avgCarbs * 4 / avgCalories) * 100;
-      const fatPercentage = (avgFat * 9 / avgCalories) * 100;
-
-      if (carbPercentage > 60) {
-        insights.push({
-          user_id: userId,
-          insight_type: 'nutrition',
-          title: '🍞 Exceso de Carbohidratos Detectado',
-          description: `Los carbohidratos representan el ${Math.round(carbPercentage)}% de tus calorías (recomendado: 45-55%).`,
-          recommendation: 'Balance tus macros reduciendo carbohidratos refinados e incrementando proteínas y grasas saludables. Nuestro Omega 3 Premium puede ayudar.',
-          confidence_score: 0.82,
-          data_points: {
-            carb_percentage: carbPercentage,
-            protein_percentage: proteinPercentage,
-            fat_percentage: fatPercentage,
-            target_carb_range: '45-55%'
-          }
-        });
-      }
-
-      // Patrón de consistencia
-      const consistencyScore = this.calculateNutritionConsistency(dailyTotals);
-      if (consistencyScore < 0.7) {
-        insights.push({
-          user_id: userId,
-          insight_type: 'nutrition',
-          title: '📊 Mejora tu Consistencia Nutricional',
-          description: 'Tus patrones alimentarios varían significativamente día a día.',
-          recommendation: 'Establece horarios regulares de comidas y utiliza nuestros Planes de Nutrición estructurados para mayor consistencia.',
-          confidence_score: 0.75,
-          data_points: {
-            consistency_score: consistencyScore,
-            target_consistency: 0.8,
-            recommendation_type: 'nutrition_plan'
-          }
-        });
-      }
-
-      return insights;
-    } catch (error) {
-      console.error('Error generando insights nutricionales:', error);
-      return [];
-    }
-  }
-
-  // Generar insights de entrenamiento
-  static async generateWorkoutInsights(userId: string) {
-    try {
-      const { data: activityData } = await dbOperations.getUserActivityStats(userId, 30);
+      // Obtener datos de alimentación del día
+      const { data: userMeals } = await dbOperations.getUserMeals(userId, today);
       
-      if (!activityData || activityData.length === 0) {
-        return [];
-      }
+      // Obtener datos de hidratación
+      const { data: waterData } = await dbOperations.getWaterIntake(userId, today);
+      const waterIntake = waterData?.[0]?.total_amount || 0;
 
-      const insights = [];
-      
-      // Análisis de frecuencia de entrenamientos
-      const workoutActivities = activityData.filter(activity => activity.activity_type === 'workout');
-      const completedWorkouts = workoutActivities.filter(activity => activity.completion_status === 'completed');
-      const weeklyWorkouts = completedWorkouts.length / 4; // Últimas 4 semanas
-      
-      if (weeklyWorkouts < 3) {
-        insights.push({
-          user_id: userId,
-          insight_type: 'workout',
-          title: '🏃‍♂️ Aumenta tu Frecuencia de Entrenamiento',
-          description: `Solo entrenas ${Math.round(weeklyWorkouts)} veces por semana. Para resultados óptimos necesitas 3-5 sesiones.`,
-          recommendation: 'Comienza con 3 entrenamientos semanales. Nuestro Pre-Entreno Explosivo te dará la energía que necesitas.',
-          confidence_score: 0.90,
-          data_points: {
-            weekly_workouts: weeklyWorkouts,
-            target_workouts: 4,
-            workout_deficit: 4 - weeklyWorkouts,
-            recommendation_type: 'pre_workout'
-          }
-        });
-      }
+      // Calcular totales nutricionales del día
+      const dailyTotals = this.calculateDailyTotals(userMeals || []);
 
-      // Análisis de duración promedio
-      const avgDuration = workoutActivities.reduce((sum, workout) => sum + (workout.duration_minutes || 0), 0) / workoutActivities.length;
-      
-      if (avgDuration < 30) {
-        insights.push({
-          user_id: userId,
-          insight_type: 'workout',
-          title: '⏱️ Extiende tus Entrenamientos',
-          description: `Tus sesiones duran ${Math.round(avgDuration)} minutos en promedio. Para mejores resultados apunta a 45-60 minutos.`,
-          recommendation: 'Incrementa gradualmente la duración. La Creatina Monohidrato te ayudará a mantener la intensidad por más tiempo.',
-          confidence_score: 0.85,
-          data_points: {
-            avg_duration: avgDuration,
-            target_duration: 45,
-            duration_deficit: 45 - avgDuration,
-            recommendation_type: 'creatine'
-          }
-        });
-      }
+      // Generar insights nutricionales
+      const nutritionInsights = this.analyzeNutrition(dailyTotals, userData);
+      insights.push(...nutritionInsights);
 
-      // Patrón de abandono (workouts iniciados pero no completados)
-      const abandonedWorkouts = workoutActivities.filter(activity => activity.completion_status !== 'completed');
-      const abandonRate = abandonedWorkouts.length / workoutActivities.length;
-      
-      if (abandonRate > 0.3) {
-        insights.push({
-          user_id: userId,
-          insight_type: 'workout',
-          title: '🎯 Mejora tu Tasa de Finalización',
-          description: `No completas el ${Math.round(abandonRate * 100)}% de tus entrenamientos iniciados.`,
-          recommendation: 'Reduce la intensidad inicial y aumenta gradualmente. Los BCAAs pueden ayudar con la fatiga muscular.',
-          confidence_score: 0.78,
-          data_points: {
-            abandon_rate: abandonRate,
-            target_completion: 0.9,
-            recommendation_type: 'bcaa'
-          }
-        });
-      }
+      // Generar insights de hidratación
+      const hydrationInsights = this.analyzeHydration(waterIntake);
+      insights.push(...hydrationInsights);
 
-      return insights;
-    } catch (error) {
-      console.error('Error generando insights de entrenamiento:', error);
-      return [];
-    }
-  }
+      // Generar insights de balance nutricional
+      const balanceInsights = this.analyzeNutritionalBalance(dailyTotals);
+      insights.push(...balanceInsights);
 
-  // Generar recomendaciones de suplementos inteligentes
-  static async generateSupplementRecommendations(userId: string) {
-    try {
-      const [nutritionInsights, workoutInsights] = await Promise.all([
-        this.generateNutritionInsights(userId),
-        this.generateWorkoutInsights(userId)
-      ]);
-
-      const recommendations = [];
-      const { data: supplements } = await dbOperations.getActiveSupplements();
-
-      // Recomendación basada en déficit proteico
-      const proteinDeficit = nutritionInsights.find(insight => 
-        insight.data_points.avg_protein && insight.data_points.avg_protein < 80
-      );
-
-      if (proteinDeficit && supplements) {
-        const proteinSupplement = supplements.find(sup => sup.category === 'Proteínas');
-        if (proteinSupplement) {
-          recommendations.push({
-            user_id: userId,
-            supplement_id: proteinSupplement.id,
-            reason: `Tu consumo promedio de ${Math.round(proteinDeficit.data_points.avg_protein)}g de proteína diaria está por debajo del óptimo para tus objetivos`,
-            confidence_score: 0.92,
-            based_on_data: {
-              avg_protein: proteinDeficit.data_points.avg_protein,
-              protein_deficit: proteinDeficit.data_points.deficit,
-              analysis_period: '30 días',
-              recommendation_strength: 'alta'
-            }
-          });
-        }
-      }
-
-      // Recomendación basada en frecuencia de entrenamientos
-      const lowWorkoutFreq = workoutInsights.find(insight => 
-        insight.data_points.weekly_workouts && insight.data_points.weekly_workouts < 3
-      );
-
-      if (lowWorkoutFreq && supplements) {
-        const preWorkout = supplements.find(sup => sup.category === 'Pre-Entreno');
-        if (preWorkout) {
-          recommendations.push({
-            user_id: userId,
-            supplement_id: preWorkout.id,
-            reason: `Con solo ${Math.round(lowWorkoutFreq.data_points.weekly_workouts)} entrenamientos semanales, necesitas más energía y motivación`,
-            confidence_score: 0.85,
-            based_on_data: {
-              weekly_workouts: lowWorkoutFreq.data_points.weekly_workouts,
-              target_workouts: 4,
-              energy_need: 'alta',
-              recommendation_strength: 'media'
-            }
-          });
-        }
-      }
-
-      // Recomendación multivitamínico para usuarios muy activos
-      const { compliance_score } = await dbOperations.getUserComplianceScore(userId, 30);
-      if (compliance_score > 70 && supplements) {
-        const multivitamin = supplements.find(sup => sup.category === 'Vitaminas');
-        if (multivitamin) {
-          recommendations.push({
-            user_id: userId,
-            supplement_id: multivitamin.id,
-            reason: `Tu alto nivel de actividad (${compliance_score}% de cumplimiento) aumenta tus necesidades nutricionales`,
-            confidence_score: 0.78,
-            based_on_data: {
-              compliance_score,
-              activity_level: 'alto',
-              nutritional_demands: 'incrementadas',
-              recommendation_strength: 'media'
-            }
-          });
-        }
-      }
-
-      return recommendations;
-    } catch (error) {
-      console.error('Error generando recomendaciones de suplementos:', error);
-      return [];
-    }
-  }
-
-  // Funciones de utilidad
-  private static calculateDailyNutritionTotals(nutritionData: any[]) {
-    const dailyTotals: { [key: string]: any } = {};
-
-    nutritionData.forEach(meal => {
-      const date = meal.date;
-      if (!dailyTotals[date]) {
-        dailyTotals[date] = { calories: 0, protein: 0, carbs: 0, fat: 0 };
-      }
-
-      const factor = meal.portion_grams / 100;
-      dailyTotals[date].calories += meal.foods.calories_per_100g * factor;
-      dailyTotals[date].protein += meal.foods.protein_per_100g * factor;
-      dailyTotals[date].carbs += meal.foods.carbs_per_100g * factor;
-      dailyTotals[date].fat += meal.foods.fat_per_100g * factor;
-    });
-
-    return Object.values(dailyTotals);
-  }
-
-  private static calculateNutritionConsistency(dailyTotals: any[]) {
-    if (dailyTotals.length < 7) return 0.5; // Datos insuficientes
-
-    const avgCalories = dailyTotals.reduce((sum, day) => sum + day.calories, 0) / dailyTotals.length;
-    const variance = dailyTotals.reduce((sum, day) => sum + Math.pow(day.calories - avgCalories, 2), 0) / dailyTotals.length;
-    const stdDeviation = Math.sqrt(variance);
-    const coefficientOfVariation = stdDeviation / avgCalories;
-
-    // Menor coeficiente de variación = mayor consistencia
-    return Math.max(0, 1 - coefficientOfVariation);
-  }
-
-  // Función principal para generar todos los insights
-  static async generateAllInsights(userId: string) {
-    try {
-      const [nutritionInsights, workoutInsights, supplementRecommendations] = await Promise.all([
-        this.generateNutritionInsights(userId),
-        this.generateWorkoutInsights(userId),
-        this.generateSupplementRecommendations(userId)
-      ]);
+      // Generar insights de logros
+      const achievementInsights = this.analyzeAchievements(dailyTotals, waterIntake, userData);
+      insights.push(...achievementInsights);
 
       // Guardar insights en la base de datos
-      for (const insight of [...nutritionInsights, ...workoutInsights]) {
-        await dbOperations.addUserInsight(insight);
-      }
-
-      // Guardar recomendaciones de suplementos
-      for (const recommendation of supplementRecommendations) {
-        await dbOperations.addSupplementRecommendation(recommendation);
-      }
+      const savedInsights = await this.saveInsights(userId, insights);
 
       return {
-        insights: [...nutritionInsights, ...workoutInsights],
-        supplement_recommendations: supplementRecommendations,
-        total_insights: nutritionInsights.length + workoutInsights.length,
-        total_recommendations: supplementRecommendations.length
+        total_insights: insights.length,
+        insights: savedInsights,
+        status: 'success'
       };
+
     } catch (error) {
-      console.error('Error generando insights completos:', error);
+      console.error('Error generating insights:', error);
       return {
-        insights: [],
-        supplement_recommendations: [],
         total_insights: 0,
-        total_recommendations: 0
+        insights: [],
+        status: 'error',
+        message: 'Error generando análisis de IA'
       };
     }
+  }
+
+  private static calculateDailyTotals(meals: any[]) {
+    return meals.reduce((totals, meal) => {
+      if (meal.foods) {
+        const factor = meal.portion_grams / 100;
+        totals.calories += Math.round(meal.foods.calories_per_100g * factor);
+        totals.protein += Math.round(meal.foods.protein_per_100g * factor * 10) / 10;
+        totals.carbs += Math.round(meal.foods.carbs_per_100g * factor * 10) / 10;
+        totals.fat += Math.round(meal.foods.fat_per_100g * factor * 10) / 10;
+      }
+      return totals;
+    }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
+  }
+
+  private static analyzeNutrition(dailyTotals: any, userData: any): InsightResult[] {
+    const insights: InsightResult[] = [];
+    
+    if (!userData) return insights;
+
+    const calorieGoal = this.getCalorieGoal(userData);
+    const caloriePercentage = (dailyTotals.calories / calorieGoal) * 100;
+
+    // Análisis de calorías
+    if (caloriePercentage < 70) {
+      insights.push({
+        title: 'Ingesta calórica baja',
+        description: `Has consumido ${dailyTotals.calories} calorías de ${calorieGoal} recomendadas (${Math.round(caloriePercentage)}%)`,
+        recommendation: 'Considera agregar un snack saludable o aumentar las porciones en tu próxima comida',
+        confidence_score: 0.9,
+        type: 'warning'
+      });
+    } else if (caloriePercentage > 120) {
+      insights.push({
+        title: 'Ingesta calórica alta',
+        description: `Has excedido tu meta calórica diaria en ${dailyTotals.calories - calorieGoal} calorías`,
+        recommendation: 'Considera reducir las porciones o aumentar tu actividad física',
+        confidence_score: 0.85,
+        type: 'warning'
+      });
+    } else if (caloriePercentage >= 90 && caloriePercentage <= 110) {
+      insights.push({
+        title: 'Excelente control calórico',
+        description: `Estás muy cerca de tu meta calórica diaria (${Math.round(caloriePercentage)}%)`,
+        recommendation: 'Mantén este equilibrio para alcanzar tus objetivos',
+        confidence_score: 0.95,
+        type: 'achievement'
+      });
+    }
+
+    return insights;
+  }
+
+  private static analyzeHydration(waterIntake: number): InsightResult[] {
+    const insights: InsightResult[] = [];
+    const hydrationPercentage = (waterIntake / this.WATER_GOAL) * 100;
+
+    if (hydrationPercentage < 50) {
+      insights.push({
+        title: 'Hidratación insuficiente',
+        description: `Solo has consumido ${waterIntake}ml de ${this.WATER_GOAL}ml recomendados`,
+        recommendation: 'Bebe más agua durante el día. Intenta tomar un vaso cada hora',
+        confidence_score: 0.9,
+        type: 'warning'
+      });
+    } else if (hydrationPercentage >= 90) {
+      insights.push({
+        title: '¡Excelente hidratación!',
+        description: `Has alcanzado ${Math.round(hydrationPercentage)}% de tu meta de hidratación`,
+        recommendation: 'Mantén este buen hábito de hidratación',
+        confidence_score: 0.95,
+        type: 'achievement'
+      });
+    }
+
+    return insights;
+  }
+
+  private static analyzeNutritionalBalance(dailyTotals: any): InsightResult[] {
+    const insights: InsightResult[] = [];
+    
+    if (dailyTotals.calories === 0) return insights;
+
+    const proteinRatio = (dailyTotals.protein * 4) / dailyTotals.calories;
+    const carbsRatio = (dailyTotals.carbs * 4) / dailyTotals.calories;
+    const fatRatio = (dailyTotals.fat * 9) / dailyTotals.calories;
+
+    // Análisis de proteína
+    if (proteinRatio < this.MACRO_RATIOS.protein.min) {
+      insights.push({
+        title: 'Proteína insuficiente',
+        description: `Tu ingesta de proteína es baja (${Math.round(proteinRatio * 100)}% de calorías)`,
+        recommendation: 'Incluye más fuentes de proteína como pollo, pescado, huevos o legumbres',
+        confidence_score: 0.8,
+        type: 'nutrition'
+      });
+    }
+
+    // Análisis de carbohidratos
+    if (carbsRatio > this.MACRO_RATIOS.carbs.max) {
+      insights.push({
+        title: 'Alto consumo de carbohidratos',
+        description: `Los carbohidratos representan ${Math.round(carbsRatio * 100)}% de tus calorías`,
+        recommendation: 'Considera reducir carbohidratos refinados y aumentar proteínas y grasas saludables',
+        confidence_score: 0.75,
+        type: 'balance'
+      });
+    }
+
+    return insights;
+  }
+
+  private static analyzeAchievements(dailyTotals: any, waterIntake: number, userData: any): InsightResult[] {
+    const insights: InsightResult[] = [];
+
+    // Logro de balance general
+    if (dailyTotals.calories > 500 && waterIntake > 1500) {
+      const calorieGoal = this.getCalorieGoal(userData);
+      const caloriePercentage = (dailyTotals.calories / calorieGoal) * 100;
+      const hydrationPercentage = (waterIntake / this.WATER_GOAL) * 100;
+
+      if (caloriePercentage >= 85 && caloriePercentage <= 115 && hydrationPercentage >= 80) {
+        insights.push({
+          title: '¡Día equilibrado!',
+          description: 'Has mantenido un buen balance entre alimentación y hidratación',
+          recommendation: 'Continúa con estos hábitos saludables para alcanzar tus metas',
+          confidence_score: 0.9,
+          type: 'achievement'
+        });
+      }
+    }
+
+    return insights;
+  }
+
+  private static getCalorieGoal(userData: any): number {
+    const nivel = userData.nivel_actividad || 'moderado';
+    const genero = userData.genero || 'masculino';
+    
+    return this.CALORIE_GOALS[nivel as keyof typeof this.CALORIE_GOALS]?.[genero as keyof typeof this.CALORIE_GOALS.moderado] || 2000;
+  }
+
+  private static async saveInsights(userId: string, insights: InsightResult[]): Promise<InsightResult[]> {
+    const savedInsights: InsightResult[] = [];
+
+    for (const insight of insights) {
+      try {
+        const { data } = await dbOperations.createUserInsight({
+          user_id: userId,
+          title: insight.title,
+          description: insight.description,
+          recommendation: insight.recommendation,
+          confidence_score: insight.confidence_score,
+          type: insight.type,
+          is_viewed: false
+        });
+
+        if (data) {
+          savedInsights.push({
+            ...insight,
+            id: data.id
+          } as any);
+        }
+      } catch (error) {
+        console.error('Error saving insight:', error);
+        // Si falla el guardado, aún devolvemos el insight
+        savedInsights.push(insight);
+      }
+    }
+
+    return savedInsights;
+  }
+
+  // Método para generar insights basados en tendencias (futuro)
+  static async generateTrendInsights(userId: string, days: number = 7): Promise<AnalysisResult> {
+    // Implementación futura para análisis de tendencias
+    return {
+      total_insights: 0,
+      insights: [],
+      status: 'success',
+      message: 'Análisis de tendencias no implementado aún'
+    };
+  }
+
+  // Método para generar recomendaciones personalizadas
+  static async generatePersonalizedRecommendations(userId: string): Promise<InsightResult[]> {
+    const insights: InsightResult[] = [];
+    
+    try {
+      const { data: userData } = await dbOperations.getUserById(userId);
+      
+      if (userData?.objetivo) {
+        const objective = userData.objetivo;
+        
+        if (objective === 'perder_peso') {
+          insights.push({
+            title: 'Enfoque en pérdida de peso',
+            description: 'Tu objetivo es perder peso de manera saludable',
+            recommendation: 'Mantén un déficit calórico moderado (300-500 cal) y combina con ejercicio regular',
+            confidence_score: 0.85,
+            type: 'nutrition'
+          });
+        } else if (objective === 'ganar_musculo') {
+          insights.push({
+            title: 'Enfoque en ganancia muscular',
+            description: 'Tu objetivo es ganar masa muscular',
+            recommendation: 'Asegúrate de consumir 1.6-2.2g de proteína por kg de peso corporal',
+            confidence_score: 0.85,
+            type: 'nutrition'
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error generating personalized recommendations:', error);
+    }
+
+    return insights;
   }
 }
