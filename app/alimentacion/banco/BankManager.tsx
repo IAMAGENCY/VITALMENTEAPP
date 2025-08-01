@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 
-// Definir el tipo Food directamente aquí o asegurarse de que esté en el archivo correcto
+// Definir el tipo Food directamente aquí
 export interface Food {
   id: string;
   name: string;
@@ -21,8 +21,8 @@ const dbOperations = {
   getFoods: async () => {
     try {
       // Aquí iría la lógica real de Supabase
-      // Por ahora retornamos datos de sessionStorage o error
-      const localFoods = sessionStorage.getItem('vitalemente_foods_backup');
+      // Por ahora retornamos datos de memoria o error
+      const localFoods = typeof window !== 'undefined' ? localStorage.getItem('vitalemente_foods_backup') : null;
       if (localFoods) {
         return { data: JSON.parse(localFoods), error: null };
       }
@@ -102,15 +102,17 @@ export default function BankManager({ onSelectFood, showAddFood = true }: BankMa
         console.error('Error cargando alimentos:', error);
         setConnectionStatus('❌ Error de conexión');
         
-        // Cargar datos de respaldo desde sessionStorage
-        const localFoods = sessionStorage.getItem('vitalemente_foods_backup');
-        if (localFoods) {
-          const parsedFoods = JSON.parse(localFoods);
-          setFoods(parsedFoods);
-          setConnectionStatus(`📱 Modo local (${parsedFoods.length} alimentos)`);
-        } else {
-          // Crear datos de respaldo locales básicos
-          await createLocalBackupData();
+        // Cargar datos de respaldo desde localStorage
+        if (typeof window !== 'undefined') {
+          const localFoods = localStorage.getItem('vitalemente_foods_backup');
+          if (localFoods) {
+            const parsedFoods = JSON.parse(localFoods);
+            setFoods(parsedFoods);
+            setConnectionStatus(`📱 Modo local (${parsedFoods.length} alimentos)`);
+          } else {
+            // Crear datos de respaldo locales básicos
+            await createLocalBackupData();
+          }
         }
       } else if (!data || data.length === 0) {
         setConnectionStatus('🌱 Base de datos vacía - Inicializando...');
@@ -121,12 +123,16 @@ export default function BankManager({ onSelectFood, showAddFood = true }: BankMa
         const { data: newData } = await dbOperations.getFoods();
         if (newData) {
           setFoods(newData);
-          sessionStorage.setItem('vitalemente_foods_backup', JSON.stringify(newData));
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('vitalemente_foods_backup', JSON.stringify(newData));
+          }
           setConnectionStatus(`✅ Supabase conectado (${newData.length} alimentos)`);
         }
       } else {
         setFoods(data);
-        sessionStorage.setItem('vitalemente_foods_backup', JSON.stringify(data));
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('vitalemente_foods_backup', JSON.stringify(data));
+        }
         setConnectionStatus(`✅ Supabase conectado (${data.length} alimentos)`);
       }
     } catch (error) {
@@ -134,13 +140,15 @@ export default function BankManager({ onSelectFood, showAddFood = true }: BankMa
       setConnectionStatus('❌ Sin conexión');
       
       // Usar datos locales como respaldo
-      const localFoods = sessionStorage.getItem('vitalemente_foods_backup');
-      if (localFoods) {
-        const parsedFoods = JSON.parse(localFoods);
-        setFoods(parsedFoods);
-        setConnectionStatus(`📱 Modo local (${parsedFoods.length} alimentos)`);
-      } else {
-        await createLocalBackupData();
+      if (typeof window !== 'undefined') {
+        const localFoods = localStorage.getItem('vitalemente_foods_backup');
+        if (localFoods) {
+          const parsedFoods = JSON.parse(localFoods);
+          setFoods(parsedFoods);
+          setConnectionStatus(`📱 Modo local (${parsedFoods.length} alimentos)`);
+        } else {
+          await createLocalBackupData();
+        }
       }
     } finally {
       setLoading(false);
@@ -176,7 +184,9 @@ export default function BankManager({ onSelectFood, showAddFood = true }: BankMa
     ];
 
     setFoods(basicFoods);
-    sessionStorage.setItem('vitalemente_foods_backup', JSON.stringify(basicFoods));
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('vitalemente_foods_backup', JSON.stringify(basicFoods));
+    }
     setConnectionStatus(`📱 Modo local (${basicFoods.length} alimentos básicos)`);
   };
 
@@ -237,11 +247,15 @@ export default function BankManager({ onSelectFood, showAddFood = true }: BankMa
         };
         const updatedFoods = [localFood, ...foods];
         setFoods(updatedFoods);
-        sessionStorage.setItem('vitalemente_foods_backup', JSON.stringify(updatedFoods));
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('vitalemente_foods_backup', JSON.stringify(updatedFoods));
+        }
       } else if (data) {
         const updatedFoods = [data, ...foods];
         setFoods(updatedFoods);
-        sessionStorage.setItem('vitalemente_foods_backup', JSON.stringify(updatedFoods));
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('vitalemente_foods_backup', JSON.stringify(updatedFoods));
+        }
       }
 
       // Resetear formulario
