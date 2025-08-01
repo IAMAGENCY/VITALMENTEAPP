@@ -50,9 +50,9 @@ export default function UserDashboard({ userId }: DashboardProps) {
         weeklyMeals: meals?.length || 0,
         weeklyWorkouts: activities?.filter(a => a.activity_type === 'workout' && a.completion_status === 'completed').length || 0,
         weeklyWater: waterIntake?.reduce((sum, intake) => sum + intake.amount_ml, 0) || 0,
-        complianceScore: complianceData.overall_score || 0,
-        avgCalories: calculateAvgCalories(meals),
-        weeklyStreak: calculateStreak(meals, activities)
+        complianceScore: complianceData?.overall_score || 0,
+        avgCalories: calculateAvgCalories(meals || []),
+        weeklyStreak: calculateStreak(meals || [], activities || [])
       };
 
       setDashboardData(processedData);
@@ -76,7 +76,7 @@ export default function UserDashboard({ userId }: DashboardProps) {
       if (!dailyTotals[date]) dailyTotals[date] = 0;
       
       const factor = meal.portion_grams / 100;
-      dailyTotals[date] += meal.foods.calories_per_100g * factor;
+      dailyTotals[date] += meal.foods?.calories_per_100g * factor || 0;
     });
 
     const totalDays = Object.keys(dailyTotals).length;
@@ -87,8 +87,8 @@ export default function UserDashboard({ userId }: DashboardProps) {
 
   const calculateStreak = (meals: any[], activities: any[]) => {
     const datesWithData = new Set([
-      ...meals?.map(m => m.date) || [],
-      ...activities?.filter(a => a.completion_status === 'completed').map(a => a.date) || []
+      ...meals.map(m => m.date) || [],
+      ...activities.filter(a => a.completion_status === 'completed').map(a => a.date) || []
     ]);
     
     return datesWithData.size;
@@ -254,7 +254,7 @@ export default function UserDashboard({ userId }: DashboardProps) {
                 </div>
                 <Link 
                   href="/tienda"
-                  className="ml-3 px-3 py-1 bg-blue-600 text-white rounded-md text-xs !rounded-button"
+                  className="ml-3 px-3 py-1 bg-blue-600 text-white rounded-md text-xs rounded-button"
                 >
                   Ver
                 </Link>
