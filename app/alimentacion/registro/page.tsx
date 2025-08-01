@@ -206,7 +206,7 @@ export default function RegistroPage() {
     try {
       const nutrition = calculateNutrition(food, portion);
       
-      const { data: savedMeal } = await dbOperations.addUserMeal({
+      const { data: savedMeal } = await dbOperations.createUserMeal({
         user_id: userId,
         food_id: food.id,
         meal_type: selectedMealType,
