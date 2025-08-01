@@ -12,7 +12,7 @@ export default function WorkoutManager() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
-  const [connectionStatus, setConnectionStatus] = useState('Verificando...');
+  const [connectionStatus, setConnectionStatus] = useState('Verificando conexión...');
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -44,23 +44,23 @@ export default function WorkoutManager() {
   const loadWorkouts = async () => {
     setLoading(true);
     try {
-      setConnectionStatus(' Conectando a Supabase...');
+      setConnectionStatus('Verificando conexión...');
       const { data, error } = await dbOperations.getWorkoutLinks();
 
       if (error) {
         console.error('Error loading workouts:', error);
-        setConnectionStatus(' Error de conexión - Usando datos locales');
+        setConnectionStatus('Error de conexión - Usando datos locales');
         loadLocalWorkouts();
       } else if (!data || data.length === 0) {
-        setConnectionStatus(' Base de datos vacía - Inicializando...');
+        setConnectionStatus('Base de datos vacía - Inicializando...');
         await initializeWorkouts();
       } else {
         setWorkouts(data);
-        setConnectionStatus(` Supabase conectado (${data.length} entrenamientos)`);
+        setConnectionStatus(`Supabase conectado (${data.length} entrenamientos)`);
       }
     } catch (error) {
       console.error('Error connecting to Supabase:', error);
-      setConnectionStatus(' Sin conexión - Modo local');
+      setConnectionStatus('Sin conexión - Modo local');
       loadLocalWorkouts();
     } finally {
       setLoading(false);
@@ -103,7 +103,7 @@ export default function WorkoutManager() {
         difficulty: 'principiante' as const,
         duration: 45,
         image_url: 'https://readdy.ai/api/search-image?query=Energetic%20cardio%20music%2C%20workout%20playlist%2C%20motivational%20fitness%20music%2C%20gym%20music%2C%20upbeat%20training%20songs%2C%20exercise%20motivation&width=400&height=300&seq=cardio_music1&orientation=landscape',
-        tags: ['musica', 'motivacion', 'energia', 'playlist'],
+        tags: ['música', 'motivacion', 'energia', 'playlist'],
         is_active: true
       },
       {
@@ -189,7 +189,7 @@ export default function WorkoutManager() {
         difficulty: 'principiante' as const,
         duration: 50,
         image_url: 'https://readdy.ai/api/search-image?query=Functional%20training%20music%2C%20workout%20motivation%20playlist%2C%20gym%20music%2C%20intense%20training%20songs%2C%20functional%20fitness%20motivation&width=400&height=300&seq=functional_music1&orientation=landscape',
-        tags: ['musica', 'motivacion', 'intenso', 'funcional'],
+        tags: ['música', 'motivacion', 'intenso', 'funcional'],
         is_active: true
       },
       {
@@ -367,7 +367,7 @@ export default function WorkoutManager() {
     ];
 
     try {
-      setConnectionStatus(' Creando entrenamientos en Supabase...');
+      setConnectionStatus('Creando entrenamientos en Supabase...');
       let createdCount = 0;
 
       for (const workout of initialWorkouts) {
@@ -375,11 +375,11 @@ export default function WorkoutManager() {
         if (!error) createdCount++;
       }
 
-      setConnectionStatus(` ${createdCount} entrenamientos creados en Supabase`);
+      setConnectionStatus(`${createdCount} entrenamientos creados exitosamente`);
       await loadWorkouts();
     } catch (error) {
       console.error('Error initializing workouts:', error);
-      setConnectionStatus(' Error inicializando - Usando datos locales');
+      setConnectionStatus('Error inicializando - Usando datos locales');
       loadLocalWorkouts();
     }
   };
@@ -562,9 +562,9 @@ export default function WorkoutManager() {
 
       {/* Connection Status */}
       <div className="bg-white rounded-lg p-4 shadow-sm">
-        <div className={`flex items-center gap-2 text-sm p-3 rounded-lg border ${connectionStatus.includes('✅') ? 'bg-green-50 border-green-200' : connectionStatus.includes('❌') ? 'bg-red-50 border-red-200' : connectionStatus.includes('🌱') || connectionStatus.includes('🚀') ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200'}`}>
-          <div className={`w-2 h-2 rounded-full ${connectionStatus.includes('✅') ? 'bg-green-500' : connectionStatus.includes('❌') ? 'bg-red-500' : 'bg-blue-500 animate-pulse'}`}></div>
-          <span className={`${connectionStatus.includes('✅') ? 'text-green-700' : connectionStatus.includes('❌') ? 'text-red-700' : 'text-blue-700'}`}>{connectionStatus}</span>
+        <div className={`flex items-center gap-2 text-sm p-3 rounded-lg border ${connectionStatus.includes('conectado') || connectionStatus.includes('exitosamente') ? 'bg-green-50 border-green-200' : connectionStatus.includes('Error') ? 'bg-red-50 border-red-200' : 'bg-blue-50 border-blue-200'}`}>
+          <div className={`w-2 h-2 rounded-full ${connectionStatus.includes('conectado') || connectionStatus.includes('exitosamente') ? 'bg-green-500' : connectionStatus.includes('Error') ? 'bg-red-500' : 'bg-blue-500 animate-pulse'}`}></div>
+          <span className={`${connectionStatus.includes('conectado') || connectionStatus.includes('exitosamente') ? 'text-green-700' : connectionStatus.includes('Error') ? 'text-red-700' : 'text-blue-700'}`}>{connectionStatus}</span>
         </div>
       </div>
 

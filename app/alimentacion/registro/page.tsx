@@ -27,8 +27,9 @@ export default function RegistroPage() {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [showFoodBank, setShowFoodBank] = useState(false);
   const [selectedMealType, setSelectedMealType] = useState<'desayuno' | 'almuerzo' | 'cena' | 'snack'>('desayuno');
-  const [userId, setUserId] = useState('');
+  const [userId, setUserId] = useState<string>('');
   const [isTracking, setIsTracking] = useState(false);
+  const [loading, setLoading] = useState(true);
   
   const [meals, setMeals] = useState<{
     desayuno: MealFood[];
@@ -73,32 +74,18 @@ export default function RegistroPage() {
   }, [meals]);
 
   const initializeUser = async () => {
-    // Obtener usuario actual del localStorage o crear uno temporal
-    const savedUser = localStorage.getItem('vitalMenteUser');
-    const savedUserId = localStorage.getItem('vitalMenteUserId');
-
-    if (savedUserId && !savedUserId.startsWith('local-')) {
-      setUserId(savedUserId);
-    } else if (savedUser) {
-      const user = JSON.parse(savedUser);
-      // Buscar usuario en Supabase por email
-      try {
-        const { data: users } = await dbOperations.getUsers();
-        const existingUser = users?.find(u => u.email === user.email);
-        if (existingUser) {
-          setUserId(existingUser.id);
-          localStorage.setItem('vitalMenteUserId', existingUser.id);
-        } else {
-          // Crear usuario demo temporal
-          setUserId('user-demo-' + Date.now());
-        }
-      } catch (error) {
-        console.error('Error buscando usuario:', error);
-        setUserId('user-demo-' + Date.now());
-      }
-    } else {
-      // Usuario temporal para demo
-      setUserId('user-demo-' + Date.now());
+    try {
+      setLoading(true);
+      
+      // En producción, obtener usuario autenticado de Supabase
+      // Por ahora simulamos obtener el usuario actual
+      const currentUserId = 'auth-user-id'; // Se reemplazará con auth real
+      setUserId(currentUserId);
+      
+    } catch (error) {
+      console.error('Error inicializando usuario:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -145,7 +132,6 @@ export default function RegistroPage() {
     if (!userId) return;
     
     try {
-      // Cargar comidas del día
       const { data: userMeals } = await dbOperations.getUserMeals(userId, selectedDate);
       
       if (userMeals && userMeals.length > 0) {
@@ -173,7 +159,6 @@ export default function RegistroPage() {
 
         setMeals(mealsByType);
       } else {
-        // Resetear comidas si no hay datos
         setMeals({
           desayuno: [],
           almuerzo: [],
@@ -182,35 +167,10 @@ export default function RegistroPage() {
         });
       }
 
-      // Cargar consumo de agua
       const { total } = await dbOperations.getTotalWaterIntake(userId, selectedDate);
       setWaterProgress(prev => ({ ...prev, current: total }));
     } catch (error) {
       console.error('Error loading day data:', error);
-      // Mantener datos locales como fallback
-      loadLocalData();
-    }
-  };
-
-  const loadLocalData = () => {
-    const localMeals = localStorage.getItem(`meals_${selectedDate}`);
-    const localWater = localStorage.getItem(`water_${selectedDate}`);
-    
-    if (localMeals) {
-      setMeals(JSON.parse(localMeals));
-    } else {
-      setMeals({
-        desayuno: [],
-        almuerzo: [],
-        cena: [],
-        snack: []
-      });
-    }
-    
-    if (localWater) {
-      setWaterProgress(prev => ({ ...prev, current: parseInt(localWater) }));
-    } else {
-      setWaterProgress(prev => ({ ...prev, current: 0 }));
     }
   };
 
@@ -245,7 +205,6 @@ export default function RegistroPage() {
     try {
       const nutrition = calculateNutrition(food, portion);
       
-      // Guardar en Supabase
       const { data: savedMeal } = await dbOperations.addUserMeal({
         user_id: userId,
         food_id: food.id,
@@ -262,7 +221,6 @@ export default function RegistroPage() {
           ...nutrition
         };
 
-        // Actualizar estado local
         setMeals(prev => ({
           ...prev,
           [selectedMealType]: [...prev[selectedMealType], mealFood]
@@ -270,28 +228,12 @@ export default function RegistroPage() {
 
         setShowFoodBank(false);
 
-        // Generar insights si es una comida significativa
         if (nutrition.calories > 200) {
           setTimeout(() => generateAIInsights(), 1000);
         }
       }
     } catch (error) {
       console.error('Error adding food:', error);
-      // Guardar localmente si falla la DB
-      const mealFood: MealFood = {
-        id: Date.now().toString(),
-        food,
-        portion,
-        ...calculateNutrition(food, portion)
-      };
-
-      setMeals(prev => ({
-        ...prev,
-        [selectedMealType]: [...prev[selectedMealType], mealFood]
-      }));
-
-      localStorage.setItem(`meals_${selectedDate}`, JSON.stringify(meals));
-      setShowFoodBank(false);
     }
   };
 
@@ -305,12 +247,6 @@ export default function RegistroPage() {
       }));
     } catch (error) {
       console.error('Error removing food:', error);
-      // Actualizar localmente
-      setMeals(prev => ({
-        ...prev,
-        [mealType]: prev[mealType as keyof typeof prev].filter(meal => meal.id !== mealId)
-      }));
-      localStorage.setItem(`meals_${selectedDate}`, JSON.stringify(meals));
     }
   };
 
@@ -330,10 +266,6 @@ export default function RegistroPage() {
       }));
     } catch (error) {
       console.error('Error adding water:', error);
-      // Actualizar localmente
-      const newAmount = Math.min(waterProgress.current + amount, waterProgress.goal * 1.5);
-      setWaterProgress(prev => ({ ...prev, current: newAmount }));
-      localStorage.setItem(`water_${selectedDate}`, newAmount.toString());
     }
   };
 
@@ -352,6 +284,25 @@ export default function RegistroPage() {
   ];
 
   const waterPercentage = Math.min((waterProgress.current / waterProgress.goal) * 100, 100);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <main className="pt-16 pb-20 px-4">
+          <div className="max-w-md mx-auto">
+            <div className="flex items-center justify-center py-20">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto mb-4"></div>
+                <p className="text-gray-600">Inicializando registro...</p>
+              </div>
+            </div>
+          </div>
+        </main>
+        <TabBar />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -385,7 +336,6 @@ export default function RegistroPage() {
             </div>
           </div>
 
-          {/* AI Insights Panel */}
           {showInsights && insights.length > 0 && (
             <div className="bg-gradient-to-r from-emerald-50 to-blue-50 rounded-xl p-4 shadow-sm mb-6 border-l-4 border-emerald-500">
               <div className="flex items-center justify-between mb-3">
@@ -434,7 +384,6 @@ export default function RegistroPage() {
             </div>
           )}
 
-          {/* Daily Summary */}
           <div className="bg-white rounded-xl p-6 shadow-sm mb-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold text-gray-900">Resumen del Día</h3>
@@ -466,7 +415,6 @@ export default function RegistroPage() {
             </div>
           </div>
 
-          {/* Water Intake */}
           <div className="bg-white rounded-xl p-6 shadow-sm mb-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold text-gray-900">Hidratación</h3>
@@ -495,7 +443,6 @@ export default function RegistroPage() {
             </div>
           </div>
 
-          {/* Meals */}
           <div className="space-y-4">
             {mealTypes.map(mealType => (
               <div key={mealType.key} className={`bg-white rounded-xl p-4 shadow-sm border-2 ${mealType.color}`}>
@@ -550,7 +497,6 @@ export default function RegistroPage() {
             ))}
           </div>
 
-          {/* Analytics Button */}
           <div className="mt-6">
             <button
               onClick={generateAIInsights}
@@ -573,7 +519,6 @@ export default function RegistroPage() {
         </div>
       </main>
 
-      {/* Food Bank Modal */}
       {showFoodBank && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg w-full max-w-md mx-4 max-h-[90vh] overflow-hidden">

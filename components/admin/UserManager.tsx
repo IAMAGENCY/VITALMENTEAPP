@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { User } from '@/lib/types';
+import { dbOperations, User } from '@/lib/supabase';
 
 export default function UserManager() {
   const [users, setUsers] = useState<User[]>([]);
@@ -33,43 +33,15 @@ export default function UserManager() {
   const loadUsers = async () => {
     setLoading(true);
     try {
-      const mockUsers = [
-        {
-          id: '1',
-          nombre: 'Juan Pérez',
-          email: 'juan@example.com',
-          edad: 28,
-          peso: 75,
-          altura: 175,
-          genero: 'masculino' as const,
-          actividad: 'moderado',
-          objetivo: 'ganar',
-          experiencia: 'intermedio',
-          condiciones: ['Ninguna'],
-          preferencias: ['Fuerza', 'Cardio'],
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        },
-        {
-          id: '2',
-          nombre: 'María García',
-          email: 'maria@example.com',
-          edad: 32,
-          peso: 62,
-          altura: 165,
-          genero: 'femenino' as const,
-          actividad: 'activo',
-          objetivo: 'perder',
-          experiencia: 'principiante',
-          condiciones: ['Vegetariano'],
-          preferencias: ['Yoga', 'Cardio'],
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }
-      ];
+      const { data, error } = await dbOperations.getUsers();
+      
+      if (error) {
+        console.error('Error loading users:', error);
+        return;
+      }
 
-      setUsers(mockUsers);
-      calculateAnalytics(mockUsers);
+      setUsers(data || []);
+      calculateAnalytics(data || []);
     } catch (error) {
       console.error('Error loading users:', error);
     } finally {
@@ -79,8 +51,8 @@ export default function UserManager() {
 
   const calculateAnalytics = (userList: User[]) => {
     const totalUsers = userList.length;
-    const activeUsers = userList.length; 
-    const averageAge = userList.reduce((sum, user) => sum + user.edad, 0) / totalUsers;
+    const activeUsers = userList.filter(u => u.subscription_status === 'premium').length;
+    const averageAge = totalUsers > 0 ? userList.reduce((sum, user) => sum + user.edad, 0) / totalUsers : 0;
 
     const genderDistribution = userList.reduce((acc, user) => {
       acc[user.genero] = (acc[user.genero] || 0) + 1;
@@ -118,17 +90,18 @@ export default function UserManager() {
 
   const exportUsers = () => {
     const csvContent = [
-      ['Nombre', 'Email', 'Edad', 'Peso', 'Altura', 'Género', 'Actividad', 'Objetivo', 'Experiencia', 'Condiciones', 'Preferencias'],
+      ['Nombre', 'Email', 'Edad', 'Peso', 'Altura', 'Género', 'Actividad', 'Objetivo', 'Experiencia', 'Estado Suscripción', 'Condiciones', 'Preferencias'],
       ...filteredUsers.map(user => [
         user.nombre,
         user.email,
-        user.edad,
-        user.peso,
-        user.altura,
+        user.edad.toString(),
+        user.peso.toString(),
+        user.altura.toString(),
         user.genero,
         user.actividad,
         user.objetivo,
         user.experiencia,
+        user.subscription_status || 'free',
         user.condiciones.join('; '),
         user.preferencias.join('; ')
       ])
@@ -160,6 +133,33 @@ export default function UserManager() {
     return { category: 'Obesidad', color: 'text-red-600' };
   };
 
+  const updateUserSubscription = async (userId: string, subscriptionStatus: string) => {
+    try {
+      const { error } = await dbOperations.updateUserSubscription(userId, subscriptionStatus);
+      if (error) {
+        console.error('Error updating subscription:', error);
+        return;
+      }
+      
+      // Actualizar estado local
+      setUsers(prev => prev.map(user => 
+        user.id === userId 
+          ? { ...user, subscription_status: subscriptionStatus as 'free' | 'premium' }
+          : user
+      ));
+      
+      // Recalcular analíticas
+      const updatedUsers = users.map(user => 
+        user.id === userId 
+          ? { ...user, subscription_status: subscriptionStatus as 'free' | 'premium' }
+          : user
+      );
+      calculateAnalytics(updatedUsers);
+    } catch (error) {
+      console.error('Error updating subscription:', error);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -170,7 +170,6 @@ export default function UserManager() {
 
   return (
     <div className="space-y-6">
-      {/* Analytics Cards */}
       <div className="grid grid-cols-2 gap-4">
         <div className="bg-white rounded-lg p-4 shadow-sm">
           <div className="text-center">
@@ -181,13 +180,12 @@ export default function UserManager() {
 
         <div className="bg-white rounded-lg p-4 shadow-sm">
           <div className="text-center">
-            <div className="text-2xl font-bold text-green-600">{analytics.averageAge}</div>
-            <div className="text-sm text-gray-600">Edad Promedio</div>
+            <div className="text-2xl font-bold text-green-600">{analytics.activeUsers}</div>
+            <div className="text-sm text-gray-600">Usuarios Premium</div>
           </div>
         </div>
       </div>
 
-      {/* Filters */}
       <div className="bg-white rounded-lg p-4 shadow-sm">
         <h3 className="font-medium text-gray-900 mb-4">Filtros</h3>
 
@@ -282,7 +280,6 @@ export default function UserManager() {
         </div>
       </div>
 
-      {/* Users List */}
       <div className="bg-white rounded-lg p-4 shadow-sm">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-medium text-gray-900">
@@ -314,6 +311,13 @@ export default function UserManager() {
                       <span className="text-xs text-gray-500 capitalize">
                         {user.objetivo}
                       </span>
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${
+                        user.subscription_status === 'premium' 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-gray-100 text-gray-800'
+                      }`}>
+                        {user.subscription_status === 'premium' ? 'Premium' : 'Free'}
+                      </span>
                     </div>
                   </div>
                   <div className="text-right">
@@ -329,7 +333,6 @@ export default function UserManager() {
         </div>
       </div>
 
-      {/* User Detail Modal */}
       {showUserModal && selectedUser && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4 max-h-96 overflow-y-auto">
@@ -361,13 +364,20 @@ export default function UserManager() {
                   <label className="text-sm font-medium text-gray-700">Altura</label>
                   <p className="text-sm text-gray-900">{selectedUser.altura} cm</p>
                 </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-700">Género</label>
-                  <p className="text-sm text-gray-900 capitalize">{selectedUser.genero}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-700">Actividad</label>
-                  <p className="text-sm text-gray-900 capitalize">{selectedUser.actividad}</p>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-gray-700">Suscripción</label>
+                <div className="flex items-center space-x-2 mt-1">
+                  <select
+                    value={selectedUser.subscription_status || 'free'}
+                    onChange={(e) => updateUserSubscription(selectedUser.id, e.target.value)}
+                    className="px-3 py-1 border border-gray-300 rounded text-sm"
+                  >
+                    <option value="free">Free</option>
+                    <option value="premium">Premium</option>
+                    <option value="expired">Expirado</option>
+                  </select>
                 </div>
               </div>
 
@@ -381,16 +391,6 @@ export default function UserManager() {
                     ({getIMCCategory(parseFloat(calculateIMC(selectedUser.peso, selectedUser.altura))).category})
                   </span>
                 </div>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-gray-700">Objetivo</label>
-                <p className="text-sm text-gray-900 capitalize">{selectedUser.objetivo}</p>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-gray-700">Experiencia</label>
-                <p className="text-sm text-gray-900 capitalize">{selectedUser.experiencia}</p>
               </div>
 
               <div>

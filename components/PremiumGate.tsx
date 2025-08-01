@@ -1,106 +1,40 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { subscriptionOperations } from '@/lib/supabase';
+import { useState } from 'react';
 import Link from 'next/link';
 
 interface PremiumGateProps {
-  userId?: string;
-  children: React.ReactNode;
-  fallback?: React.ReactNode;
-  contentType?: string;
-  requiresPremium?: boolean;
+  feature?: string;
+  onClose?: () => void;
 }
 
 export default function PremiumGate({ 
-  userId, 
-  children, 
-  fallback,
-  contentType = 'general',
-  requiresPremium = true 
+  feature = 'general',
+  onClose 
 }: PremiumGateProps) {
-  const [hasPremiumAccess, setHasPremiumAccess] = useState(false);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    checkAccess();
-  }, [userId]);
-
-  const checkAccess = async () => {
-    if (!requiresPremium) {
-      setHasPremiumAccess(true);
-      setLoading(false);
-      return;
-    }
-
-    if (!userId) {
-      setHasPremiumAccess(false);
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const hasAccess = await subscriptionOperations.checkPremiumAccess(userId);
-      setHasPremiumAccess(hasAccess);
-    } catch (error) {
-      console.error('Error verificando acceso premium:', error);
-      setHasPremiumAccess(false);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
-      </div>
-    );
-  }
-
-  if (!requiresPremium || hasPremiumAccess) {
-    return <>{children}</>;
-  }
-
-  if (fallback) {
-    return <>{fallback}</>;
-  }
-
-  return <PremiumUpgradeModal contentType={contentType} />;
-}
-
-function PremiumUpgradeModal({ contentType }: { contentType: string }) {
-  const [showModal, setShowModal] = useState(true);
 
   const getContentMessage = () => {
-    switch (contentType) {
-      case 'plan':
+    switch (feature) {
+      case 'nutrition-plans':
         return {
           icon: 'ri-file-list-3-line',
           title: 'Planes Nutricionales Personalizados',
           description: 'Accede a planes generados por IA específicos para tu metabolismo y objetivos',
           features: ['Planes generados por IA', 'Análisis metabólico profundo', 'Ajustes automáticos', 'Seguimiento personalizado']
         };
-      case 'diagnostic':
+      case 'supplements':
         return {
           icon: 'ri-microscope-line',
           title: 'Diagnósticos de Suplementación Avanzada',
           description: 'Análisis completo de déficits nutricionales con recomendaciones precisas',
           features: ['Análisis de déficits', 'Recomendaciones IA', 'Timing óptimo', 'Interacciones seguras']
         };
-      case 'insight':
+      case 'ai-analysis':
         return {
           icon: 'ri-bar-chart-2-line',
           title: 'Dashboard de Métricas Avanzadas',
           description: 'Analytics profundo con predicciones de progreso y optimizaciones',
           features: ['Métricas avanzadas', 'Predicciones IA', 'Tendencias personales', 'Alertas inteligentes']
-        };
-      case 'pdf':
-        return {
-          icon: 'ri-file-pdf-line',
-          title: 'Contenido Premium Descargable',
-          description: 'Guías completas y manuales especializados para tu desarrollo',
-          features: ['Guías especializadas', 'Manuales completos', 'Contenido actualizado', 'Acceso offline']
         };
       default:
         return {
@@ -114,35 +48,19 @@ function PremiumUpgradeModal({ contentType }: { contentType: string }) {
 
   const content = getContentMessage();
 
-  if (!showModal) {
-    return (
-      <div className="bg-gradient-to-br from-amber-50 to-orange-100 border-2 border-amber-200 rounded-xl p-6 text-center">
-        <div className="w-16 h-16 bg-gradient-to-br from-amber-500 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-4">
-          <i className={`${content.icon} text-white text-2xl`}></i>
-        </div>
-        <h3 className="font-bold text-gray-900 mb-2">{content.title}</h3>
-        <p className="text-gray-600 text-sm mb-4">{content.description}</p>
-        <button
-          onClick={() => setShowModal(true)}
-          className="bg-gradient-to-r from-amber-600 to-orange-600 text-white px-6 py-3 rounded-lg font-medium !rounded-button hover:from-amber-700 hover:to-orange-700 transition-all"
-        >
-          Ver Detalles Premium
-        </button>
-      </div>
-    );
-  }
-
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="relative bg-gradient-to-r from-amber-500 to-orange-500 text-white p-6 rounded-t-xl">
-          <button
-            onClick={() => setShowModal(false)}
-            className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center text-white/80 hover:text-white hover:bg-white/20 rounded-full transition-colors"
-          >
-            <i className="ri-close-line"></i>
-          </button>
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center text-white/80 hover:text-white hover:bg-white/20 rounded-full transition-colors"
+            >
+              <i className="ri-close-line"></i>
+            </button>
+          )}
           
           <div className="text-center">
             <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -221,12 +139,14 @@ function PremiumUpgradeModal({ contentType }: { contentType: string }) {
               Suscribirse por $45,000/mes
             </Link>
             
-            <button
-              onClick={() => setShowModal(false)}
-              className="w-full py-3 bg-gray-100 text-gray-700 rounded-lg font-medium !rounded-button hover:bg-gray-200 transition-colors"
-            >
-              Continuar como usuario gratuito
-            </button>
+            {onClose && (
+              <button
+                onClick={onClose}
+                className="w-full py-3 bg-gray-100 text-gray-700 rounded-lg font-medium !rounded-button hover:bg-gray-200 transition-colors"
+              >
+                Continuar como usuario gratuito
+              </button>
+            )}
           </div>
 
           {/* Security Badge */}

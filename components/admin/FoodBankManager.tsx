@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -95,9 +96,9 @@ export default function FoodBankManager() {
       protein_per_100g: parseFloat(formData.protein_per_100g),
       carbs_per_100g: parseFloat(formData.carbs_per_100g),
       fat_per_100g: parseFloat(formData.fat_per_100g),
-      fiber_per_100g: parseFloat(formData.fiber_per_100g),
+      fiber_per_100g: parseFloat(formData.fiber_per_100g) || 0,
       image_url: formData.image_url,
-      is_custom: formData.is_custom
+      is_custom: formData.is_custom || false
     };
 
     try {
@@ -131,7 +132,7 @@ export default function FoodBankManager() {
       fat_per_100g: food.fat_per_100g.toString(),
       fiber_per_100g: food.fiber_per_100g?.toString() || '0',
       image_url: food.image_url || '',
-      is_custom: food.is_custom
+      is_custom: food.is_custom || false
     });
     setEditingId(food.id);
     setShowForm(true);

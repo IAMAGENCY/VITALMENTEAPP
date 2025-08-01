@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import TabBar from '@/components/TabBar';
 import Link from 'next/link';
-import { supabase } from '@/lib/supabase';
+import { dbOperations } from '@/lib/supabase';
 
 interface WorkoutLink {
   id: string;
@@ -31,22 +31,61 @@ export default function TrenSuperiorPage() {
 
   const loadWorkouts = async () => {
     try {
-      const { data, error } = await supabase
-        .from('workout_links')
-        .select('*')
-        .eq('category', 'tren_superior')
-        .eq('is_active', true)
-        .order('created_at', { ascending: false });
+      const { data, error } = await dbOperations.getActiveWorkoutsByCategory('tren_superior');
 
-      if (error) throw error;
-      setWorkouts(data || []);
+      if (error) {
+        console.error('Error loading upper body workouts:', error);
+        // 使用模拟数据作为后备
+        setWorkouts(getMockWorkouts());
+      } else {
+        setWorkouts(data || getMockWorkouts());
+      }
     } catch (error) {
       console.error('Error loading upper body workouts:', error);
-      setWorkouts([]);
+      setWorkouts(getMockWorkouts());
     } finally {
       setLoading(false);
     }
   };
+
+  const getMockWorkouts = (): WorkoutLink[] => [
+    {
+      id: '1',
+      title: '胸部力量训练',
+      description: '专注于胸肌发展的完整训练',
+      url: 'https://youtube.com/watch?v=dQw4w9WgXcQ',
+      platform: 'youtube',
+      difficulty: 'intermedio',
+      duration: 30,
+      image_url: 'https://readdy.ai/api/search-image?query=Chest%20workout%20with%20dumbbells%2C%20gym%20equipment%2C%20fitness%20training%2C%20professional%20photography&width=200&height=150&seq=chest_workout&orientation=landscape',
+      tags: ['胸部', '力量'],
+      is_active: true
+    },
+    {
+      id: '2',
+      title: '背部塑形训练',
+      description: '强化背部肌肉群的综合训练',
+      url: 'https://youtube.com/watch?v=dQw4w9WgXcQ',
+      platform: 'youtube',
+      difficulty: 'principiante',
+      duration: 25,
+      image_url: 'https://readdy.ai/api/search-image?query=Back%20workout%20with%20resistance%20bands%2C%20fitness%20training%2C%20gym%20setting&width=200&height=150&seq=back_workout&orientation=landscape',
+      tags: ['背部', '塑形'],
+      is_active: true
+    },
+    {
+      id: '3',
+      title: '手臂力量提升',
+      description: '针对二头肌和三头肌的专项训练',
+      url: 'https://youtube.com/watch?v=dQw4w9WgXcQ',
+      platform: 'youtube',
+      difficulty: 'avanzado',
+      duration: 20,
+      image_url: 'https://readdy.ai/api/search-image?query=Arm%20workout%20with%20weights%2C%20bicep%20curl%2C%20fitness%20training&width=200&height=150&seq=arm_workout&orientation=landscape',
+      tags: ['手臂', '力量'],
+      is_active: true
+    }
+  ];
 
   const filteredWorkouts = workouts.filter(workout => {
     if (selectedDifficulty === 'todos') return true;

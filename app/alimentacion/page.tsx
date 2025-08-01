@@ -47,7 +47,7 @@ export default function AlimentacionPage() {
           <div className="text-center mb-8 mt-6">
             <div className="w-20 h-20 mx-auto mb-4 overflow-hidden rounded-full">
               <img
-                src="https://readdy.ai/api/search-image?query=Fresh%20healthy%20vegetables%20and%20fruits%20arranged%20beautifully%2C%20vibrant%20colors%2C%20clean%20white%20background%2C%20nutritious%20food%20photography%2C%20natural%20lighting%2C%20high%20quality%20realistic%20photo%2C%20colorful%20organic%20produce%2C%20wellness%20concept%2C%20clean%20eating%20lifestyle&width=200&height=200&seq=nutrition_hero&orientation=squarish"
+                src="https://readdy.ai/api/search-image?query=Fresh%20healthy%20colorful%20meal%20prep%20bowls%20with%20vegetables%2C%20proteins%2C%20grains%20beautifully%20arranged%2C%20vibrant%20colors%2C%20clean%20white%20background%2C%20nutritious%20food%20photography%2C%20natural%20lighting%2C%20high%20quality%20realistic%20photo%2C%20colorful%20organic%20produce%2C%20wellness%20nutrition%20concept%2C%20clean%20eating%20lifestyle%2C%20meal%20planning%20aesthetics&width=200&height=200&seq=nutrition_hero_new&orientation=squarish"
                 alt="Alimentación Consciente"
                 className="w-full h-full object-cover object-top"
               />

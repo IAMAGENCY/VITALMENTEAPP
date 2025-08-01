@@ -7,6 +7,7 @@ import { wompiService, WompiUtils, WOMPI_CONFIG, WompiPaymentData } from '@/lib/
 import Header from '@/components/Header';
 import TabBar from '@/components/TabBar';
 import Link from 'next/link';
+import { dbOperations } from '@/lib/supabase';
 
 export default function SuscripcionPage() {
   const [userData, setUserData] = useState<any>(null);
@@ -22,22 +23,20 @@ export default function SuscripcionPage() {
 
   const loadUserData = async () => {
     try {
-      const savedUser = localStorage.getItem('vitalMenteUser');
-      const savedUserId = localStorage.getItem('vitalMenteUserId');
+      // Cargar primer usuario registrado (en una app real sería por autenticación)
+      const { data: users, error } = await dbOperations.getUsers();
 
-      if (savedUser && savedUserId) {
-        const user = JSON.parse(savedUser);
-        setUserData({ ...user, id: savedUserId });
+      if (!error && users && users.length > 0) {
+        const user = users[0];
+        setUserData(user);
 
         // Verificar estado de suscripción actual
-        const hasAccess = await subscriptionOperations.checkPremiumAccess(savedUserId);
+        const hasAccess = user.subscription_status === 'premium';
 
         if (hasAccess) {
-          // Obtener detalles de suscripción
-          const { data: userDetails } = await subscriptionOperations.getUserSubscriptionHistory(savedUserId);
           setSubscriptionStatus({
             isPremium: true,
-            history: userDetails
+            history: []
           });
         }
       }
@@ -59,7 +58,11 @@ export default function SuscripcionPage() {
     try {
       // PRIMERO: Verificar que el usuario existe en la base de datos
       setConnectionStatus('🔍 Verificando usuario...');
-      const { data: userExists } = await subscriptionOperations.checkPremiumAccess(userData.id);
+      const { data: userExists } = await dbOperations.getUserById(userData.id);
+
+      if (!userExists) {
+        throw new Error('Usuario no encontrado en la base de datos');
+      }
 
       // SEGUNDO: Crear configuración de pago
       setConnectionStatus('💳 Preparando pago...');
@@ -79,21 +82,9 @@ export default function SuscripcionPage() {
         } : {})
       };
 
-      // TERCERO: Registrar transacción pendiente en la base de datos
+      // TERCERO: Simular registro de transacción
       setConnectionStatus('📝 Registrando transacción...');
-      const { data: transaction, error: transactionError } = await subscriptionOperations.createPaymentTransaction({
-        user_id: userData.id,
-        wompi_transaction_id: `pending_${Date.now()}`,
-        amount: WOMPI_CONFIG.MONTHLY_PRICE,
-        currency: 'COP',
-        status: 'pending',
-        payment_method: paymentMethod,
-        subscription_months: 1
-      });
-
-      if (transactionError) {
-        throw new Error(`Error registrando transacción: ${transactionError.message}`);
-      }
+      const transactionId = `transaction_${Date.now()}`;
 
       setConnectionStatus('🚀 Iniciando proceso de pago...');
 
@@ -106,24 +97,18 @@ export default function SuscripcionPage() {
           setConnectionStatus('✅ Pago aprobado, activando suscripción...');
 
           try {
-            // Actualizar transacción
-            await subscriptionOperations.updatePaymentTransaction(transaction.id, {
-              status: 'approved',
-              wompi_transaction_id: transaction.id
-            });
+            // Activar suscripción en base de datos
+            const { error } = await dbOperations.updateUserSubscription(userData.id, 'premium');
 
-            // Activar suscripción
-            const result = await subscriptionOperations.activatePremiumSubscription(userData.id, transaction.id);
-
-            if (result.success) {
-              setConnectionStatus('🎉 ¡Suscripción activada!');
-              // Redirigir a confirmación
-              setTimeout(() => {
-                window.location.href = '/suscripcion/confirmacion?success=true';
-              }, 1000);
-            } else {
+            if (error) {
               throw new Error('Error activando suscripción');
             }
+
+            setConnectionStatus('🎉 ¡Suscripción activada!');
+            // Redirigir a confirmación
+            setTimeout(() => {
+              window.location.href = '/suscripcion/confirmacion?success=true';
+            }, 1000);
 
           } catch (error) {
             console.error('❌ Error post-pago:', error);
@@ -140,7 +125,7 @@ export default function SuscripcionPage() {
         }
       );
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Error iniciando pago:', error);
       setConnectionStatus(`❌ Error: ${error.message}`);
       alert(`Error: ${error.message}`);
@@ -153,9 +138,13 @@ export default function SuscripcionPage() {
 
     if (confirm('¿Estás seguro de que quieres cancelar tu suscripción? Perderás acceso a todas las funciones premium.')) {
       try {
-        await subscriptionOperations.cancelSubscription(userData.id);
-        alert('Suscripción cancelada exitosamente');
-        await loadUserData();
+        const { error } = await dbOperations.updateUserSubscription(userData.id, 'free');
+        if (error) {
+          alert('Error cancelando la suscripción');
+        } else {
+          alert('Suscripción cancelada exitosamente');
+          await loadUserData();
+        }
       } catch (error) {
         console.error('Error cancelando suscripción:', error);
         alert('Error cancelando la suscripción');
@@ -215,7 +204,7 @@ export default function SuscripcionPage() {
               <i className="ri-vip-crown-line text-white text-3xl"></i>
             </div>
             <h1 className="text-2xl font-bold text-gray-900 mb-2">VitalMente Premium</h1>
-            <p className="text-gray-600">Desbloquea todo el potencial de la IA para tu salud</p>
+            <p className="text-gray-600">Herramientas avanzadas para tu bienestar</p>
           </div>
 
           {/* Current Status */}
@@ -257,30 +246,30 @@ export default function SuscripcionPage() {
                 </div>
 
                 <div className="p-6">
-                  <h3 className="font-bold text-gray-900 mb-4 text-center">Incluye todo lo que necesitas:</h3>
+                  <h3 className="font-bold text-gray-900 mb-4 text-center">Incluye herramientas avanzadas:</h3>
 
                   <div className="space-y-3 mb-6">
                     <div className="flex items-start">
                       <i className="ri-brain-line text-blue-600 mt-1 mr-3"></i>
                       <div>
-                        <div className="font-medium text-gray-900">Análisis IA Personalizado</div>
-                        <div className="text-gray-600 text-sm">Diagnósticos automáticos basados en tus patrones</div>
+                        <div className="font-medium text-gray-900">Análisis Personalizado</div>
+                        <div className="text-gray-600 text-sm">Seguimiento inteligente de patrones alimentarios</div>
                       </div>
                     </div>
 
                     <div className="flex items-start">
                       <i className="ri-file-list-3-line text-green-600 mt-1 mr-3"></i>
                       <div>
-                        <div className="font-medium text-gray-900">Planes Nutricionales IA</div>
-                        <div className="text-gray-600 text-sm">Generados específicamente para tu metabolismo</div>
+                        <div className="font-medium text-gray-900">Planes Nutricionales Adaptativos</div>
+                        <div className="text-gray-600 text-sm">Ajustes automáticos según tu progreso</div>
                       </div>
                     </div>
 
                     <div className="flex items-start">
                       <i className="ri-flask-line text-purple-600 mt-1 mr-3"></i>
                       <div>
-                        <div className="font-medium text-gray-900">Suplementación Inteligente</div>
-                        <div className="text-gray-600 text-sm">Recomendaciones basadas en déficits nutricionales</div>
+                        <div className="font-medium text-gray-900">Recomendaciones Inteligentes</div>
+                        <div className="text-gray-600 text-sm">Sugerencias basadas en tus hábitos y objetivos</div>
                       </div>
                     </div>
 
@@ -288,7 +277,7 @@ export default function SuscripcionPage() {
                       <i className="ri-bar-chart-2-line text-red-600 mt-1 mr-3"></i>
                       <div>
                         <div className="font-medium text-gray-900">Dashboard Avanzado</div>
-                        <div className="text-gray-600 text-sm">Métricas profundas y predicciones de progreso</div>
+                        <div className="text-gray-600 text-sm">Métricas detalladas y análisis de tendencias</div>
                       </div>
                     </div>
 
@@ -296,7 +285,7 @@ export default function SuscripcionPage() {
                       <i className="ri-download-2-line text-indigo-600 mt-1 mr-3"></i>
                       <div>
                         <div className="font-medium text-gray-900">Contenido Descargable</div>
-                        <div className="text-gray-600 text-sm">Guías PDF especializadas y manuales completos</div>
+                        <div className="text-gray-600 text-sm">Guías PDF y recursos especializados</div>
                       </div>
                     </div>
 
@@ -443,11 +432,11 @@ export default function SuscripcionPage() {
 
               <details className="group">
                 <summary className="cursor-pointer font-medium text-gray-900 flex items-center justify-between">
-                  ¿La IA realmente personaliza las recomendaciones?
+                  ¿Cómo funciona el análisis personalizado?
                   <i className="ri-arrow-down-s-line group-open:rotate-180 transition-transform"></i>
                 </summary>
                 <p className="text-gray-600 text-sm mt-2">
-                  Absolutamente. Nuestra IA analiza tus patrones alimentarios, entrenamientos y progreso para generar recomendaciones específicas para ti.
+                  Nuestro sistema analiza tus patrones alimentarios, entrenamientos y progreso para generar recomendaciones adaptadas a tus necesidades específicas.
                 </p>
               </details>
 
@@ -457,7 +446,7 @@ export default function SuscripcionPage() {
                   <i className="ri-arrow-down-s-line group-open:rotate-180 transition-transform"></i>
                 </summary>
                 <p className="text-gray-600 text-sm mt-2">
-                  Acceso directo a nuestro equipo de nutricionistas y entrenadores para consultas personalizadas y ajustes en tiempo real.
+                  Acceso directo a nuestro equipo de especialistas para consultas personalizadas y ajustes en tiempo real de tu plan.
                 </p>
               </details>
             </div>

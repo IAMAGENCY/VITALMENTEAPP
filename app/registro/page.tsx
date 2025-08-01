@@ -18,25 +18,26 @@ export default function RegistroPage() {
     edad: '',
     peso: '',
     altura: '',
-    genero: 'masculino',
+    genero: 'masculino' as 'masculino' | 'femenino',
     actividad: 'sedentario',
     objetivo: 'mantener',
     experiencia: 'principiante',
-    condiciones: [],
-    preferencias: []
+    condiciones: [] as string[],
+    preferencias: [] as string[]
   });
 
-  const [errors, setErrors] = useState({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value, type } = e.target;
+
     if (type === 'checkbox') {
+      const checked = (e.target as HTMLInputElement).checked;
       setFormData(prev => ({
         ...prev,
         [name]: checked 
-          ? [...prev[name], value]
-          : prev[name].filter(item => item !== value)
+          ? [...prev[name as keyof typeof prev] as string[], value]
+          : (prev[name as keyof typeof prev] as string[]).filter(item => item !== value)
       }));
     } else {
       setFormData(prev => ({
@@ -44,22 +45,27 @@ export default function RegistroPage() {
         [name]: value
       }));
     }
+
+    // Clear error when user starts typing
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
+    }
   };
 
-  const validateStep = (stepNumber) => {
-    const newErrors = {};
-    
+  const validateStep = (stepNumber: number): boolean => {
+    const newErrors: Record<string, string> = {};
+
     if (stepNumber === 1) {
       if (!formData.nombre.trim()) newErrors.nombre = 'El nombre es requerido';
       if (!formData.email.trim()) newErrors.email = 'El email es requerido';
-      if (!formData.edad || formData.edad < 1) newErrors.edad = 'La edad es requerida';
+      if (!formData.edad || parseInt(formData.edad) < 1) newErrors.edad = 'La edad es requerida';
     }
-    
+
     if (stepNumber === 2) {
-      if (!formData.peso || formData.peso <= 0) newErrors.peso = 'El peso es requerido';
-      if (!formData.altura || formData.altura <= 0) newErrors.altura = 'La altura es requerida';
+      if (!formData.peso || parseFloat(formData.peso) <= 0) newErrors.peso = 'El peso es requerido';
+      if (!formData.altura || parseInt(formData.altura) <= 0) newErrors.altura = 'La altura es requerida';
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -78,17 +84,17 @@ export default function RegistroPage() {
     if (!validateStep(step)) return;
 
     setLoading(true);
-    
+
     try {
       setConnectionStatus('⏳ Guardando en Supabase...');
-      
+
       // VERIFICAR CONEXIÓN PRIMERO
       const { data: testConnection } = await dbOperations.getUsers();
-      if (!testConnection) {
+      if (testConnection === null) {
         throw new Error('No se puede conectar a Supabase');
       }
-      
-      // Preparar datos para Supabase - VALIDAR TODAS LAS COLUMNAS
+
+      // Preparar datos para Supabase - SIN updated_at
       const userData = {
         nombre: formData.nombre.trim(),
         email: formData.email.trim().toLowerCase(),
@@ -101,25 +107,23 @@ export default function RegistroPage() {
         experiencia: formData.experiencia, 
         condiciones: formData.condiciones || [], 
         preferencias: formData.preferencias || [], 
-        subscription_status: 'free', 
-        created_at: new Date().toISOString()
+        subscription_status: 'free' as 'free' | 'premium'
       };
 
       console.log('🔍 Datos a enviar a Supabase:', userData);
 
       // Verificar si el usuario ya existe por email
-      const { data: existingUsers } = await dbOperations.getUsers();
-      const existingUser = existingUsers?.find(u => u.email === userData.email);
+      const { data: existingUser } = await dbOperations.getUserByEmail(userData.email);
 
       let finalUser;
 
       if (existingUser) {
         setConnectionStatus('🔄 Usuario encontrado - Actualizando datos...');
         console.log('🔄 Actualizando usuario existente ID:', existingUser.id);
-        
+
         // Actualizar usuario existente
         const { data: updatedUser, error } = await dbOperations.updateUser(existingUser.id, userData);
-        
+
         if (error) {
           console.error('❌ Error actualizando usuario:', error);
           throw new Error(`Error actualizando: ${error.message}`);
@@ -128,19 +132,17 @@ export default function RegistroPage() {
         finalUser = updatedUser;
         console.log('✅ Usuario actualizado:', finalUser);
         setConnectionStatus('✅ Perfil actualizado exitosamente');
-        
+
       } else {
         setConnectionStatus('➕ Creando nuevo usuario...');
         console.log('➕ Creando nuevo usuario...');
-        
+
         // Crear nuevo usuario
         const { data: newUser, error } = await dbOperations.createUser(userData);
-        
+
         if (error) {
           console.error('❌ Error creando usuario:', error);
-          console.error('❌ Detalles del error:', error.details);
-          console.error('❌ Mensaje completo:', error.message);
-          
+
           // MOSTRAR ERROR ESPECÍFICO AL USUARIO
           if (error.message.includes('duplicate key')) {
             throw new Error('Este email ya está registrado');
@@ -156,29 +158,22 @@ export default function RegistroPage() {
         setConnectionStatus('✅ Usuario creado exitosamente');
       }
 
-      // Guardar en localStorage para acceso rápido
-      localStorage.setItem('vitalMenteUser', JSON.stringify(finalUser));
-      localStorage.setItem('vitalMenteUserId', finalUser.id);
-      localStorage.setItem('vitalMenteMessage', existingUser ? 'Perfil actualizado exitosamente' : 'Perfil creado exitosamente');
-      
       // Esperar un momento y navegar al perfil
       setTimeout(() => {
         router.push('/perfil');
       }, 1500);
-      
-    } catch (error) {
+
+    } catch (error: any) {
       console.error('💥 ERROR COMPLETO:', error);
-      
+
       // MOSTRAR ERROR ESPECÍFICO AL USUARIO
       setConnectionStatus(`❌ Error: ${error.message}`);
-      
+
       // Mantener el error visible por más tiempo
       setTimeout(() => {
         setConnectionStatus('');
       }, 5000);
-      
-      // NO hacer fallback a localStorage para que el usuario sepa que hay un problema real
-      
+
     } finally {
       setLoading(false);
     }
@@ -187,8 +182,8 @@ export default function RegistroPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      
-      <main className="pt-16 pb-20 px-4">
+
+      <main className="pt-20 pb-20 px-4">
         <div className="max-w-md mx-auto">
           <div className="text-center mb-8 mt-6">
             <h1 className="text-2xl font-bold text-gray-900 mb-2">
@@ -225,7 +220,7 @@ export default function RegistroPage() {
           {step === 1 && (
             <div className="bg-white rounded-xl p-6 shadow-sm">
               <h3 className="font-semibold text-gray-900 mb-4">Información Personal</h3>
-              
+
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -311,7 +306,7 @@ export default function RegistroPage() {
           {step === 2 && (
             <div className="bg-white rounded-xl p-6 shadow-sm">
               <h3 className="font-semibold text-gray-900 mb-4">Datos Físicos</h3>
-              
+
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -389,7 +384,7 @@ export default function RegistroPage() {
           {step === 3 && (
             <div className="bg-white rounded-xl p-6 shadow-sm">
               <h3 className="font-semibold text-gray-900 mb-4">Objetivos y Preferencias</h3>
-              
+
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -465,7 +460,7 @@ export default function RegistroPage() {
                 Anterior
               </button>
             )}
-            
+
             {step < 3 ? (
               <button
                 onClick={nextStep}

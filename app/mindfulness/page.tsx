@@ -1,3 +1,4 @@
+
 'use client';
 
 import Header from '@/components/Header';
@@ -91,7 +92,7 @@ export default function MindfulnessPage() {
           <div className="text-center mb-8 mt-6">
             <div className="w-20 h-20 mx-auto mb-4 overflow-hidden rounded-full">
               <img
-                src="https://readdy.ai/api/search-image?query=Peaceful%20meditation%20zen%20garden%20with%20stones%20and%20candles%2C%20serene%20atmosphere%2C%20soft%20lighting%2C%20clean%20white%20background%2C%20mindfulness%20photography%2C%20natural%20elements%2C%20high%20quality%20realistic%20photo%2C%20wellness%20concept%2C%20spiritual%20harmony&width=200&height=200&seq=mindfulness_hero&orientation=squarish"
+                src="https://readdy.ai/api/search-image?query=Peaceful%20zen%20meditation%20garden%20with%20lotus%20flowers%2C%20smooth%20stones%2C%20candles%2C%20serene%20water%20features%2C%20soft%20natural%20lighting%2C%20clean%20white%20background%2C%20mindfulness%20photography%2C%20natural%20zen%20elements%2C%20high%20quality%20realistic%20photo%2C%20wellness%20spa%20concept%2C%20spiritual%20harmony%2C%20tranquil%20meditation%20space&width=200&height=200&seq=mindfulness_hero_new&orientation=squarish"
                 alt="Mindfulness"
                 className="w-full h-full object-cover object-top"
               />

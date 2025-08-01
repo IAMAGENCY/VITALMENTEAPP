@@ -1,3 +1,4 @@
+
 'use client';
 
 import Header from '@/components/Header';
@@ -73,7 +74,7 @@ export default function EntrenamientoPage() {
           <div className="text-center mb-8 mt-6">
             <div className="w-20 h-20 mx-auto mb-4 overflow-hidden rounded-full">
               <img
-                src="https://readdy.ai/api/search-image?query=Fitness%20gym%20equipment%20and%20dumbbells%20arranged%20beautifully%2C%20vibrant%20colors%2C%20clean%20white%20background%2C%20workout%20photography%2C%20natural%20lighting%2C%20high%20quality%20realistic%20photo%2C%20exercise%20equipment%2C%20wellness%20concept%2C%20active%20lifestyle&width=200&height=200&seq=fitness_hero&orientation=squarish"
+                src="https://readdy.ai/api/search-image?query=Modern%20fitness%20gym%20with%20professional%20equipment%2C%20dumbbells%2C%20barbells%2C%20exercise%20machines%20arranged%20aesthetically%2C%20vibrant%20colors%2C%20clean%20white%20background%2C%20workout%20photography%2C%20natural%20lighting%2C%20high%20quality%20realistic%20photo%2C%20fitness%20equipment%2C%20wellness%20concept%2C%20active%20lifestyle%2C%20strength%20training%20environment&width=200&height=200&seq=fitness_hero_new&orientation=squarish"
                 alt="Entrenamiento"
                 className="w-full h-full object-cover object-top"
               />

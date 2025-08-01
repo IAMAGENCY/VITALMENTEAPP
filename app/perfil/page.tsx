@@ -6,10 +6,23 @@ import Header from '@/components/Header';
 import TabBar from '@/components/TabBar';
 import Link from 'next/link';
 import { dbOperations } from '@/lib/supabase';
+import { User } from '@/lib/types';
+
+interface MacroTargets {
+  calorias: number;
+  proteinas: number;
+  carbohidratos: number;
+  grasas: number;
+}
+
+interface IMCCategory {
+  text: string;
+  color: string;
+}
 
 export default function PerfilPage() {
-  const [userData, setUserData] = useState(null);
-  const [macros, setMacros] = useState(null);
+  const [userData, setUserData] = useState<User | null>(null);
+  const [macros, setMacros] = useState<MacroTargets | null>(null);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
   const [connectionStatus, setConnectionStatus] = useState('Cargando...');
@@ -17,17 +30,9 @@ export default function PerfilPage() {
 
   useEffect(() => {
     loadUserData();
-
-    // Mostrar mensaje de éxito si existe
-    const successMessage = localStorage.getItem('vitalMenteMessage');
-    if (successMessage) {
-      setMessage(successMessage);
-      localStorage.removeItem('vitalMenteMessage');
-      setTimeout(() => setMessage(''), 3000);
-    }
   }, []);
 
-  const testConnection = async () => {
+  const testConnection = async (): Promise<boolean> => {
     setCheckingConnection(true);
     try {
       setConnectionStatus('🔍 Verificando Supabase...');
@@ -57,101 +62,49 @@ export default function PerfilPage() {
       const isConnected = await testConnection();
 
       if (isConnected) {
-        // MÉTODO 1: Buscar por ID guardado
-        const userId = localStorage.getItem('vitalMenteUserId');
+        setConnectionStatus('🔍 Buscando usuarios...');
 
-        if (userId && !userId.startsWith('local-')) {
-          console.log('🔍 Buscando usuario por ID:', userId);
+        const { data: users, error } = await dbOperations.getUsers();
 
-          const { data: supabaseUser, error } = await dbOperations.getUserById(userId);
-
-          if (!error && supabaseUser) {
-            console.log('✅ Usuario encontrado en Supabase por ID:', supabaseUser);
-            setUserData(supabaseUser);
-            calculateMacros(supabaseUser);
-            localStorage.setItem('vitalMenteUser', JSON.stringify(supabaseUser));
-            setLoading(false);
-            return;
-          } else {
-            console.log('❌ Usuario no encontrado por ID:', error);
-            // Limpiar ID inválido
-            localStorage.removeItem('vitalMenteUserId');
-          }
-        }
-
-        // MÉTODO 2: Buscar por email desde datos locales
-        const localUser = localStorage.getItem('vitalMenteUser');
-        if (localUser) {
-          const user = JSON.parse(localUser);
-          console.log('📧 Buscando usuario por email:', user.email);
-
-          setConnectionStatus('🔄 Sincronizando con Supabase...');
-
-          const { data: users, error } = await dbOperations.getUsers();
-          if (!error && users) {
-            const existingUser = users.find(u => u.email === user.email);
-            if (existingUser) {
-              console.log('🔄 Usuario encontrado por email:', existingUser);
-              setConnectionStatus('✅ Sincronizado con Supabase');
-              setUserData(existingUser);
-              calculateMacros(existingUser);
-              localStorage.setItem('vitalMenteUserId', existingUser.id);
-              localStorage.setItem('vitalMenteUser', JSON.stringify(existingUser));
-              setLoading(false);
-              return;
-            }
-          }
-        }
-
-        // MÉTODO 3: Si no hay datos locales, mostrar formulario de login
-        console.log('❌ No se encontró usuario registrado');
-        setConnectionStatus('❌ Usuario no encontrado');
-      } else {
-        // Sin conexión - usar datos locales si existen
-        const localUser = localStorage.getItem('vitalMenteUser');
-        if (localUser) {
-          const user = JSON.parse(localUser);
-          console.log('📱 Usando datos locales sin conexión');
-          setConnectionStatus('📱 Modo offline');
+        if (!error && users && users.length > 0) {
+          // En producción real, esto sería por autenticación
+          // Por ahora tomamos el primer usuario registrado
+          const user = users[0];
+          console.log('✅ Usuario encontrado:', user);
           setUserData(user);
           calculateMacros(user);
+          setConnectionStatus('✅ Usuario cargado');
         } else {
-          console.log('❌ No hay datos locales disponibles');
-          setConnectionStatus('❌ Sin datos');
+          console.log('❌ No hay usuarios registrados');
+          setConnectionStatus('❌ No hay usuarios registrados');
+          setUserData(null);
         }
+      } else {
+        console.log('❌ Sin conexión a Supabase');
+        setConnectionStatus('❌ Sin conexión a base de datos');
       }
 
       setLoading(false);
     } catch (error) {
       console.error('💥 Error completo cargando datos:', error);
       setConnectionStatus('❌ Error de conexión');
-
-      // Fallback final a datos locales
-      const localUser = localStorage.getItem('vitalMenteUser');
-      if (localUser) {
-        const user = JSON.parse(localUser);
-        setUserData(user);
-        calculateMacros(user);
-        setConnectionStatus('📱 Modo offline');
-      }
-
       setLoading(false);
     }
   };
 
-  const calculateMacros = (user) => {
-    const peso = parseFloat(user.peso);
-    const altura = parseFloat(user.altura);
-    const edad = parseInt(user.edad);
+  const calculateMacros = (user: User) => {
+    const peso = parseFloat(user.peso.toString());
+    const altura = parseFloat(user.altura.toString());
+    const edad = parseInt(user.edad.toString());
 
-    let tmb;
+    let tmb: number;
     if (user.genero === 'masculino') {
       tmb = 88.362 + (13.397 * peso) + (4.799 * altura) - (5.677 * edad);
     } else {
       tmb = 447.593 + (9.247 * peso) + (3.098 * altura) - (4.330 * edad);
     }
 
-    const factoresActividad = {
+    const factoresActividad: Record<string, number> = {
       sedentario: 1.2,
       ligero: 1.375,
       moderado: 1.55,
@@ -159,7 +112,7 @@ export default function PerfilPage() {
       muy_activo: 1.9
     };
 
-    const calorias = tmb * factoresActividad[user.actividad];
+    const calorias = tmb * (factoresActividad[user.actividad] || 1.2);
 
     let caloriasObjetivo = calorias;
     if (user.objetivo === 'perder') {
@@ -180,35 +133,19 @@ export default function PerfilPage() {
     });
   };
 
-  const getIMC = () => {
+  const getIMC = (): string | null => {
     if (!userData) return null;
-    const peso = parseFloat(userData.peso);
-    const altura = parseFloat(userData.altura) / 100;
+    const peso = parseFloat(userData.peso.toString());
+    const altura = parseFloat(userData.altura.toString()) / 100;
     const imc = peso / (altura * altura);
     return imc.toFixed(1);
   };
 
-  const getIMCCategory = (imc) => {
+  const getIMCCategory = (imc: number): IMCCategory => {
     if (imc < 18.5) return { text: 'Bajo peso', color: 'text-blue-600' };
     if (imc < 25) return { text: 'Normal', color: 'text-green-600' };
     if (imc < 30) return { text: 'Sobrepeso', color: 'text-yellow-600' };
     return { text: 'Obesidad', color: 'text-red-600' };
-  };
-
-  const handleLogout = async () => {
-    if (confirm('¿Estás seguro de que quieres cerrar sesión?')) {
-      try {
-        localStorage.removeItem('vitalMenteUser');
-        localStorage.removeItem('vitalMenteUserId');
-        localStorage.removeItem('vitalMenteMessage');
-        setUserData(null);
-        setMacros(null);
-        setConnectionStatus('Sesión cerrada');
-        console.log('👋 Sesión cerrada exitosamente');
-      } catch (error) {
-        console.error('Error cerrando sesión:', error);
-      }
-    }
   };
 
   const handleRefreshConnection = () => {
@@ -219,7 +156,7 @@ export default function PerfilPage() {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
-        <main className="pt-16 pb-20 px-4">
+        <main className="pt-20 pb-20 px-4">
           <div className="max-w-md mx-auto">
             {/* Estado de carga */}
             <div className="text-center mt-12 mb-8">
@@ -241,7 +178,7 @@ export default function PerfilPage() {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
-        <main className="pt-16 pb-20 px-4">
+        <main className="pt-20 pb-20 px-4">
           <div className="max-w-md mx-auto text-center mt-12">
             {/* Estado de conexión */}
             <div className="mt-4 mb-6">
@@ -284,13 +221,13 @@ export default function PerfilPage() {
   }
 
   const imc = getIMC();
-  const imcCategory = getIMCCategory(parseFloat(imc));
+  const imcCategory = imc ? getIMCCategory(parseFloat(imc)) : { text: 'N/A', color: 'text-gray-600' };
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
 
-      <main className="pt-16 pb-20 px-4">
+      <main className="pt-20 pb-20 px-4">
         <div className="max-w-md mx-auto">
           {/* Estado de conexión */}
           <div className="mt-4 mb-4">
@@ -353,7 +290,7 @@ export default function PerfilPage() {
                 <div className="text-xs text-gray-600">cm</div>
               </div>
               <div className="text-center">
-                <div className={`text-2xl font-bold ${imcCategory.color}`}>{imc}</div>
+                <div className={`text-2xl font-bold ${imcCategory.color}`}>{imc || 'N/A'}</div>
                 <div className="text-xs text-gray-600">IMC</div>
               </div>
             </div>
@@ -431,15 +368,15 @@ export default function PerfilPage() {
           )}
 
           {/* Condiciones y Preferencias */}
-          {(userData.condiciones?.length > 0 || userData.preferencias?.length > 0) && (
+          {(userData.condiciones && userData.condiciones.length > 0 || userData.preferencias && userData.preferencias.length > 0) && (
             <div className="bg-white rounded-xl p-6 shadow-sm mb-6">
               <h3 className="font-semibold text-gray-900 mb-4">Preferencias</h3>
 
-              {userData.condiciones?.length > 0 && (
+              {userData.condiciones && userData.condiciones.length > 0 && (
                 <div className="mb-4">
                   <h4 className="text-sm font-medium text-gray-700 mb-2">Condiciones Especiales</h4>
                   <div className="flex flex-wrap gap-2">
-                    {userData.condiciones.map(condition => (
+                    {userData.condiciones.map((condition: string) => (
                       <span key={condition} className="px-2 py-1 bg-red-100 text-red-800 text-xs rounded-full">
                         {condition}
                       </span>
@@ -448,11 +385,11 @@ export default function PerfilPage() {
                 </div>
               )}
 
-              {userData.preferencias?.length > 0 && (
+              {userData.preferencias && userData.preferencias.length > 0 && (
                 <div>
                   <h4 className="text-sm font-medium text-gray-700 mb-2">Preferencias de Entrenamiento</h4>
                   <div className="flex flex-wrap gap-2">
-                    {userData.preferencias.map(preference => (
+                    {userData.preferencias.map((preference: string) => (
                       <span key={preference} className="px-2 py-1 bg-emerald-100 text-emerald-800 text-xs rounded-full">
                         {preference}
                       </span>
@@ -477,18 +414,6 @@ export default function PerfilPage() {
                 </div>
                 <i className="ri-arrow-right-s-line text-gray-400"></i>
               </Link>
-
-              <button
-                onClick={handleLogout}
-                className="flex items-center justify-between p-3 bg-red-50 rounded-lg hover:bg-red-100 transition-colors w-full"
-              >
-                <div className="flex items-center">
-                  <i className="ri-logout-box-line text-red-600 mr-3"></i>
-                  <span className="text-sm font-medium text-red-600">
-                    Cerrar Sesión
-                  </span>
-                </div>
-              </button>
             </div>
           </div>
         </div>
@@ -500,12 +425,16 @@ export default function PerfilPage() {
 }
 
 // Componente de login para usuarios existentes
-function LoginForm({ onLoginSuccess }) {
+interface LoginFormProps {
+  onLoginSuccess: () => void;
+}
+
+function LoginForm({ onLoginSuccess }: LoginFormProps) {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleLogin = async (e) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim()) {
       setError('Ingresa tu email');
@@ -517,24 +446,15 @@ function LoginForm({ onLoginSuccess }) {
 
     try {
       console.log('🔍 Buscando usuario por email:', email);
-      const { data: users, error } = await dbOperations.getUsers();
+      const { data: user, error } = await dbOperations.getUserByEmail(email.toLowerCase().trim());
 
-      if (error) {
-        setError('Error de conexión con la base de datos');
+      if (error || !user) {
+        setError('No se encontró una cuenta con este email');
         return;
       }
 
-      const user = users?.find(u => u.email.toLowerCase() === email.toLowerCase().trim());
-
-      if (user) {
-        console.log('✅ Usuario encontrado:', user);
-        localStorage.setItem('vitalMenteUser', JSON.stringify(user));
-        localStorage.setItem('vitalMenteUserId', user.id);
-        localStorage.setItem('vitalMenteMessage', 'Bienvenido de nuevo!');
-        onLoginSuccess();
-      } else {
-        setError('No se encontró una cuenta con este email');
-      }
+      console.log('✅ Usuario encontrado:', user);
+      onLoginSuccess();
     } catch (error) {
       console.error('💥 Error en login:', error);
       setError('Error de conexión');

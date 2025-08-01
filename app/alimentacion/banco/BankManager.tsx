@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { dbOperations, initializeDatabase, Food } from '../../../lib/supabase';
+import { dbOperations, Food } from '../../../lib/supabase';
 
 interface BankManagerProps {
   onSelectFood?: (food: Food, portion: number) => void;
@@ -14,12 +14,10 @@ export default function BankManager({ onSelectFood, showAddFood = true }: BankMa
   const [filteredFoods, setFilteredFoods] = useState<Food[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('Todas');
+  const [selectedCategory, setSelectedCategory] = useState('');
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [isInitializing, setIsInitializing] = useState(false);
   const [selectedFood, setSelectedFood] = useState<Food | null>(null);
   const [portion, setPortion] = useState(100);
-  const [connectionStatus, setConnectionStatus] = useState('Verificando...');
 
   const [newFood, setNewFood] = useState({
     name: '',
@@ -32,7 +30,7 @@ export default function BankManager({ onSelectFood, showAddFood = true }: BankMa
   });
 
   const categories = [
-    'Todas', 'Frutas', 'Verduras', 'Proteínas', 'Carbohidratos', 
+    'Frutas', 'Verduras', 'Proteínas', 'Carbohidratos', 
     'Grasas', 'Lácteos', 'Legumbres', 'Cereales', 'Snacks', 'Bebidas', 'Condimentos'
   ];
 
@@ -46,104 +44,19 @@ export default function BankManager({ onSelectFood, showAddFood = true }: BankMa
 
   const loadFoods = async () => {
     try {
-      setConnectionStatus('Conectando...');
+      setLoading(true);
       const { data, error } = await dbOperations.getFoods();
 
       if (error) {
         console.error('Error cargando alimentos:', error);
-        setConnectionStatus('❌ Error de conexión');
-        
-        // Cargar datos de respaldo desde localStorage
-        const localFoods = localStorage.getItem('vitalemente_foods_backup');
-        if (localFoods) {
-          const parsedFoods = JSON.parse(localFoods);
-          setFoods(parsedFoods);
-          setConnectionStatus(`📱 Modo local (${parsedFoods.length} alimentos)`);
-        } else {
-          // Crear datos de respaldo locales básicos
-          await createLocalBackupData();
-        }
-      } else if (!data || data.length === 0) {
-        setConnectionStatus('🌱 Base de datos vacía - Inicializando...');
-        // Inicializar automáticamente con 100+ alimentos
-        await initializeDatabase.loadInitialFoods();
-        
-        // Recargar después de inicializar
-        const { data: newData } = await dbOperations.getFoods();
-        if (newData) {
-          setFoods(newData);
-          localStorage.setItem('vitalemente_foods_backup', JSON.stringify(newData));
-          setConnectionStatus(`✅ Supabase conectado (${newData.length} alimentos)`);
-        }
-      } else {
-        setFoods(data);
-        localStorage.setItem('vitalemente_foods_backup', JSON.stringify(data));
-        setConnectionStatus(`✅ Supabase conectado (${data.length} alimentos)`);
+        return;
       }
+
+      setFoods(data || []);
     } catch (error) {
-      console.error('Error conectando con Supabase:', error);
-      setConnectionStatus('❌ Sin conexión');
-      
-      // Usar datos locales como respaldo
-      const localFoods = localStorage.getItem('vitalemente_foods_backup');
-      if (localFoods) {
-        const parsedFoods = JSON.parse(localFoods);
-        setFoods(parsedFoods);
-        setConnectionStatus(`📱 Modo local (${parsedFoods.length} alimentos)`);
-      } else {
-        await createLocalBackupData();
-      }
+      console.error('Error conectando con base de datos:', error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const createLocalBackupData = async () => {
-    const basicFoods = [
-      // Frutas básicas
-      { id: '1', name: 'Manzana', category: 'Frutas', calories_per_100g: 52, protein_per_100g: 0.3, carbs_per_100g: 14, fat_per_100g: 0.2, fiber_per_100g: 2.4, is_custom: false, created_at: new Date().toISOString() },
-      { id: '2', name: 'Plátano', category: 'Frutas', calories_per_100g: 89, protein_per_100g: 1.1, carbs_per_100g: 23, fat_per_100g: 0.3, fiber_per_100g: 2.6, is_custom: false, created_at: new Date().toISOString() },
-      { id: '3', name: 'Naranja', category: 'Frutas', calories_per_100g: 47, protein_per_100g: 0.9, carbs_per_100g: 12, fat_per_100g: 0.1, fiber_per_100g: 2.4, is_custom: false, created_at: new Date().toISOString() },
-      
-      // Verduras básicas
-      { id: '4', name: 'Brócoli', category: 'Verduras', calories_per_100g: 34, protein_per_100g: 2.8, carbs_per_100g: 7, fat_per_100g: 0.4, fiber_per_100g: 2.6, is_custom: false, created_at: new Date().toISOString() },
-      { id: '5', name: 'Espinaca', category: 'Verduras', calories_per_100g: 23, protein_per_100g: 2.9, carbs_per_100g: 3.6, fat_per_100g: 0.4, fiber_per_100g: 2.2, is_custom: false, created_at: new Date().toISOString() },
-      { id: '6', name: 'Zanahoria', category: 'Verduras', calories_per_100g: 41, protein_per_100g: 0.9, carbs_per_100g: 10, fat_per_100g: 0.2, fiber_per_100g: 2.8, is_custom: false, created_at: new Date().toISOString() },
-      
-      // Proteínas básicas
-      { id: '7', name: 'Pollo Pechuga', category: 'Proteínas', calories_per_100g: 165, protein_per_100g: 31, carbs_per_100g: 0, fat_per_100g: 3.6, fiber_per_100g: 0, is_custom: false, created_at: new Date().toISOString() },
-      { id: '8', name: 'Huevo Entero', category: 'Proteínas', calories_per_100g: 155, protein_per_100g: 13, carbs_per_100g: 1.1, fat_per_100g: 11, fiber_per_100g: 0, is_custom: false, created_at: new Date().toISOString() },
-      { id: '9', name: 'Atún en Agua', category: 'Proteínas', calories_per_100g: 184, protein_per_100g: 30, carbs_per_100g: 0, fat_per_100g: 6.3, fiber_per_100g: 0, is_custom: false, created_at: new Date().toISOString() },
-      
-      // Carbohidratos básicos
-      { id: '10', name: 'Arroz Integral', category: 'Carbohidratos', calories_per_100g: 123, protein_per_100g: 2.6, carbs_per_100g: 23, fat_per_100g: 0.9, fiber_per_100g: 1.8, is_custom: false, created_at: new Date().toISOString() },
-      { id: '11', name: 'Avena', category: 'Carbohidratos', calories_per_100g: 389, protein_per_100g: 17, carbs_per_100g: 66, fat_per_100g: 7, fiber_per_100g: 10.6, is_custom: false, created_at: new Date().toISOString() },
-      { id: '12', name: 'Papa', category: 'Carbohidratos', calories_per_100g: 77, protein_per_100g: 2, carbs_per_100g: 17, fat_per_100g: 0.1, fiber_per_100g: 2.1, is_custom: false, created_at: new Date().toISOString() },
-      
-      // Grasas básicas
-      { id: '13', name: 'Aguacate', category: 'Grasas', calories_per_100g: 160, protein_per_100g: 2, carbs_per_100g: 9, fat_per_100g: 15, fiber_per_100g: 6.7, is_custom: false, created_at: new Date().toISOString() },
-      { id: '14', name: 'Almendras', category: 'Grasas', calories_per_100g: 579, protein_per_100g: 21, carbs_per_100g: 22, fat_per_100g: 50, fiber_per_100g: 12.5, is_custom: false, created_at: new Date().toISOString() },
-      { id: '15', name: 'Aceite de Oliva', category: 'Grasas', calories_per_100g: 884, protein_per_100g: 0, carbs_per_100g: 0, fat_per_100g: 100, fiber_per_100g: 0, is_custom: false, created_at: new Date().toISOString() }
-    ];
-
-    setFoods(basicFoods);
-    localStorage.setItem('vitalemente_foods_backup', JSON.stringify(basicFoods));
-    setConnectionStatus(`📱 Modo local (${basicFoods.length} alimentos básicos)`);
-  };
-
-  const initializeSupabase = async () => {
-    setIsInitializing(true);
-    try {
-      setConnectionStatus('🌱 Inicializando base de datos...');
-      await initializeDatabase.loadInitialFoods();
-      await loadFoods();
-      alert('✅ Base de datos inicializada con 100+ alimentos');
-    } catch (error) {
-      console.error('Error inicializando:', error);
-      setConnectionStatus('❌ Error en inicialización');
-      alert('❌ Error inicializando base de datos. Usando datos locales.');
-    } finally {
-      setIsInitializing(false);
     }
   };
 
@@ -175,23 +88,18 @@ export default function BankManager({ onSelectFood, showAddFood = true }: BankMa
         is_custom: true
       };
 
-      // Intentar guardar en base de datos
       const { data, error } = await dbOperations.createFood(foodData);
 
       if (error) {
         console.error('Error creating food:', error);
-        // Agregar localmente si falla la DB
-        const localFood = {
-          id: Date.now().toString(),
-          ...foodData,
-          created_at: new Date().toISOString()
-        };
-        setFoods(prev => [localFood, ...prev]);
-      } else {
+        alert('Error al crear el alimento');
+        return;
+      }
+
+      if (data) {
         setFoods(prev => [data, ...prev]);
       }
 
-      // Resetear formulario
       setNewFood({
         name: '',
         category: 'Frutas',
@@ -233,28 +141,12 @@ export default function BankManager({ onSelectFood, showAddFood = true }: BankMa
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 pb-20">
-      {/* Header */}
       <div className="bg-white shadow-sm border-b px-4 py-4 mb-6">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Banco de Alimentos</h1>
             <p className="text-sm text-gray-600">{foods.length} alimentos disponibles</p>
           </div>
-          <button
-            onClick={initializeSupabase}
-            disabled={isInitializing}
-            className="px-3 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 disabled:opacity-50 !rounded-button"
-          >
-            {isInitializing ? '⏳ Cargando...' : '🔄 Inicializar'}
-          </button>
-        </div>
-      </div>
-
-      {/* Estado de conexión */}
-      <div className="px-4 mb-4">
-        <div className="flex items-center gap-2 text-sm bg-white p-3 rounded-lg shadow-sm">
-          <div className={`w-2 h-2 rounded-full ${connectionStatus.includes('✅') ? 'bg-green-500 animate-pulse' : connectionStatus.includes('❌') ? 'bg-red-500' : connectionStatus.includes('📱') ? 'bg-blue-500' : 'bg-yellow-500'}`}></div>
-          <span className={`${connectionStatus.includes('✅') ? 'text-green-700' : connectionStatus.includes('❌') ? 'text-red-700' : connectionStatus.includes('📱') ? 'text-blue-700' : 'text-yellow-700'}`}>{connectionStatus}</span>
         </div>
       </div>
 
@@ -267,7 +159,6 @@ export default function BankManager({ onSelectFood, showAddFood = true }: BankMa
         </div>
       ) : (
         <>
-          {/* Search and Filters */}
           <div className="px-4 mb-6">
             <div className="bg-white rounded-xl p-4 shadow-sm">
               <div className="flex items-center space-x-2 mb-4">
@@ -292,13 +183,18 @@ export default function BankManager({ onSelectFood, showAddFood = true }: BankMa
                 )}
               </div>
 
-              {/* Categories */}
               <div className="flex space-x-2 overflow-x-auto scrollbar-hide">
+                <button
+                  onClick={() => setSelectedCategory('')}
+                  className={`px-3 py-1 rounded-full text-sm whitespace-nowrap transition-colors ${selectedCategory === '' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                >
+                  Todas
+                </button>
                 {categories.map(category => (
                   <button
                     key={category}
-                    onClick={() => setSelectedCategory(category === 'Todas' ? '' : category)}
-                    className={`px-3 py-1 rounded-full text-sm whitespace-nowrap transition-colors ${selectedCategory === (category === 'Todas' ? '' : category) ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                    onClick={() => setSelectedCategory(category)}
+                    className={`px-3 py-1 rounded-full text-sm whitespace-nowrap transition-colors ${selectedCategory === category ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
                   >
                     {category}
                   </button>
@@ -307,7 +203,6 @@ export default function BankManager({ onSelectFood, showAddFood = true }: BankMa
             </div>
           </div>
 
-          {/* Foods List */}
           <div className="px-4">
             <div className="bg-white rounded-xl shadow-sm">
               <div className="p-4 border-b">
@@ -323,15 +218,6 @@ export default function BankManager({ onSelectFood, showAddFood = true }: BankMa
                     <p className="text-gray-600 mb-4">
                       {searchTerm ? 'No se encontraron alimentos' : 'No hay alimentos disponibles'}
                     </p>
-                    {!searchTerm && (
-                      <button
-                        onClick={initializeSupabase}
-                        disabled={isInitializing}
-                        className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50 !rounded-button"
-                      >
-                        {isInitializing ? '⏳ Cargando...' : '🌱 Cargar Alimentos'}
-                      </button>
-                    )}
                   </div>
                 ) : (
                   <div className="space-y-0">
@@ -385,7 +271,6 @@ export default function BankManager({ onSelectFood, showAddFood = true }: BankMa
         </>
       )}
 
-      {/* Create Food Modal */}
       {showCreateForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4 max-h-96 overflow-y-auto">
@@ -422,7 +307,7 @@ export default function BankManager({ onSelectFood, showAddFood = true }: BankMa
                   onChange={(e) => setNewFood({ ...newFood, category: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
                 >
-                  {categories.filter(cat => cat !== 'Todas').map(category => (
+                  {categories.map(category => (
                     <option key={category} value={category}>{category}</option>
                   ))}
                 </select>
@@ -513,7 +398,6 @@ export default function BankManager({ onSelectFood, showAddFood = true }: BankMa
         </div>
       )}
 
-      {/* Food Detail Modal */}
       {selectedFood && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">

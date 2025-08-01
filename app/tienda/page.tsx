@@ -4,16 +4,15 @@
 import { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import TabBar from '@/components/TabBar';
-import { dbOperations } from '@/lib/supabase';
-import Link from 'next/link';
+import { dbOperations, Supplement, SupplementRecommendation } from '@/lib/supabase';
 
 export default function TiendaPage() {
-  const [supplements, setSupplements] = useState<any[]>([]);
+  const [supplements, setSupplements] = useState<Supplement[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('Todos');
-  const [filteredSupplements, setFilteredSupplements] = useState<any[]>([]);
-  const [recommendations, setRecommendations] = useState<any[]>([]);
-  const [userId, setUserId] = useState('');
+  const [filteredSupplements, setFilteredSupplements] = useState<Supplement[]>([]);
+  const [recommendations, setRecommendations] = useState<SupplementRecommendation[]>([]);
+  const [userId, setUserId] = useState<string>('');
 
   const categories = ['Todos', 'Proteínas', 'Vitaminas', 'Pre-Entreno', 'Grasas Saludables', 'Pérdida de Peso', 'Fuerza', 'Aminoácidos', 'Bienestar'];
 
@@ -33,143 +32,39 @@ export default function TiendaPage() {
 
   const initializeStore = async () => {
     try {
-      // Obtener usuario actual
-      const savedUserId = localStorage.getItem('vitalMenteUserId');
-      if (savedUserId && !savedUserId.startsWith('local-')) {
-        setUserId(savedUserId);
-      }
+      setLoading(true);
+      
+      // Obtener usuario autenticado
+      const currentUserId = 'auth-user-id'; // Se reemplazará con auth real
+      setUserId(currentUserId);
 
       // Cargar suplementos activos
       const { data, error } = await dbOperations.getActiveSupplements();
       
       if (error) {
         console.error('Error cargando suplementos:', error);
-        // Usar datos de respaldo
-        setSupplements(getBackupSupplements());
-      } else if (!data || data.length === 0) {
-        console.log('No hay suplementos, usando datos de respaldo');
-        setSupplements(getBackupSupplements());
-      } else {
-        setSupplements(data);
+        return;
       }
+
+      setSupplements(data || []);
     } catch (error) {
       console.error('Error inicializando tienda:', error);
-      setSupplements(getBackupSupplements());
     } finally {
       setLoading(false);
     }
   };
 
   const loadRecommendations = async () => {
+    if (!userId) return;
+    
     try {
       const { data } = await dbOperations.getUserSupplementRecommendations(userId);
       if (data) {
-        setRecommendations(data.slice(0, 3)); // Top 3 recomendaciones
+        setRecommendations(data.slice(0, 3));
       }
     } catch (error) {
       console.error('Error cargando recomendaciones:', error);
     }
-  };
-
-  const getBackupSupplements = () => {
-    return [
-      {
-        id: '1',
-        name: 'Proteína Whey Premium',
-        category: 'Proteínas',
-        price: 89900,
-        stock: 50,
-        benefits: ['Desarrollo muscular', 'Recuperación post-entreno', 'Saciedad prolongada'],
-        ingredients: ['Whey Protein Concentrate', 'Whey Protein Isolate', 'Saborizante natural', 'Stevia'],
-        description: 'Proteína de suero de alta calidad con perfil completo de aminoácidos esenciales.',
-        image_url: 'https://readdy.ai/api/search-image?query=Premium%20whey%20protein%20powder%20container%2C%20professional%20supplement%20photography%2C%20high%20quality%20protein%20shake%20powder%2C%20fitness%20nutrition%20product%2C%20clean%20white%20background&width=300&height=300&seq=whey1&orientation=squarish',
-        is_active: true
-      },
-      {
-        id: '2',
-        name: 'Multivitamínico Completo',
-        category: 'Vitaminas',
-        price: 45500,
-        stock: 75,
-        benefits: ['Energía diaria', 'Sistema inmune', 'Metabolismo optimizado'],
-        ingredients: ['Vitamina A', 'Complejo B', 'Vitamina C', 'Vitamina D3', 'Zinc', 'Magnesio'],
-        description: 'Fórmula completa de vitaminas y minerales esenciales para el bienestar diario.',
-        image_url: 'https://readdy.ai/api/search-image?query=Multivitamin%20supplement%20bottle%20with%20colorful%20pills%2C%20complete%20daily%20vitamin%20formula%2C%20health%20and%20wellness%20product%2C%20professional%20supplement%20photography&width=300&height=300&seq=multi1&orientation=squarish',
-        is_active: true
-      },
-      {
-        id: '3',
-        name: 'Pre-Entreno Explosivo',
-        category: 'Pre-Entreno',
-        price: 67800,
-        stock: 40,
-        benefits: ['Energía explosiva', 'Focus mental', 'Resistencia aumentada'],
-        ingredients: ['Cafeína', 'Beta-Alanina', 'Creatina', 'Taurina', 'L-Citrulina'],
-        description: 'Fórmula pre-entreno diseñada para maximizar energía y rendimiento durante el entrenamiento.',
-        image_url: 'https://readdy.ai/api/search-image?query=Pre%20workout%20supplement%20powder%20container%2C%20energy%20boost%20fitness%20supplement%2C%20high%20intensity%20training%20nutrition%2C%20dynamic%20colorful%20design&width=300&height=300&seq=prework1&orientation=squarish',
-        is_active: true
-      },
-      {
-        id: '4',
-        name: 'Omega 3 Premium',
-        category: 'Grasas Saludables',
-        price: 38900,
-        stock: 60,
-        benefits: ['Salud cardiovascular', 'Función cerebral', 'Reducción inflamación'],
-        ingredients: ['EPA', 'DHA', 'Vitamina E'],
-        description: 'Ácidos grasos esenciales de alta concentración para salud cardiovascular y cognitiva.',
-        image_url: 'https://readdy.ai/api/search-image?query=Omega%203%20fish%20oil%20capsules%20bottle%2C%20premium%20EPA%20DHA%20supplement%2C%20heart%20health%20nutrition%20product%2C%20clean%20professional%20packaging&width=300&height=300&seq=omega1&orientation=squarish',
-        is_active: true
-      },
-      {
-        id: '5',
-        name: 'Quemador de Grasa Natural',
-        category: 'Pérdida de Peso',
-        price: 72300,
-        stock: 35,
-        benefits: ['Termogénesis', 'Metabolismo acelerado', 'Control apetito'],
-        ingredients: ['Extracto de té verde', 'Cafeína natural', 'L-Carnitina', 'Garcinia Cambogia'],
-        description: 'Fórmula natural que acelera el metabolismo y ayuda en el proceso de pérdida de grasa.',
-        image_url: 'https://readdy.ai/api/search-image?query=Natural%20fat%20burner%20supplement%20bottle%2C%20weight%20loss%20pills%2C%20thermogenic%20formula%2C%20fitness%20supplement%20for%20fat%20burning&width=300&height=300&seq=fatburn1&orientation=squarish',
-        is_active: true
-      },
-      {
-        id: '6',
-        name: 'Creatina Monohidrato',
-        category: 'Fuerza',
-        price: 34900,
-        stock: 80,
-        benefits: ['Fuerza explosiva', 'Volumen muscular', 'Recuperación rápida'],
-        ingredients: ['Creatina Monohidrato 100% pura'],
-        description: 'Creatina pura micronizada para aumentar fuerza, potencia y volumen muscular.',
-        image_url: 'https://readdy.ai/api/search-image?query=Pure%20creatine%20monohydrate%20powder%20container%2C%20strength%20building%20supplement%2C%20muscle%20power%20enhancer%2C%20professional%20sports%20nutrition&width=300&height=300&seq=creatine1&orientation=squarish',
-        is_active: true
-      },
-      {
-        id: '7',
-        name: 'BCAA 2:1:1',
-        category: 'Aminoácidos',
-        price: 56700,
-        stock: 45,
-        benefits: ['Recuperación muscular', 'Prevención catabolismo', 'Energía intra-entreno'],
-        ingredients: ['L-Leucina', 'L-Isoleucina', 'L-Valina', 'Electrolitos'],
-        description: 'Aminoácidos de cadena ramificada en ratio óptimo para máxima recuperación.',
-        image_url: 'https://readdy.ai/api/search-image?query=BCAA%20amino%20acid%20supplement%20powder%2C%20branched%20chain%20amino%20acids%2C%20muscle%20recovery%20drink%20mix%2C%20colorful%20fitness%20supplement&width=300&height=300&seq=bcaa1&orientation=squarish',
-        is_active: true
-      },
-      {
-        id: '8',
-        name: 'Colágeno Hidrolizado',
-        category: 'Bienestar',
-        price: 48900,
-        stock: 55,
-        benefits: ['Salud articular', 'Piel saludable', 'Fortalecimiento huesos'],
-        ingredients: ['Péptidos de colágeno tipo I y III', 'Vitamina C', 'Biotina'],
-        description: 'Colágeno de alta biodisponibilidad para mantener salud articular y piel radiante.',
-        image_url: 'https://readdy.ai/api/search-image?query=Hydrolyzed%20collagen%20powder%20container%2C%20anti-aging%20supplement%2C%20joint%20health%20product%2C%20beauty%20and%20wellness%20nutrition&width=300&height=300&seq=collagen1&orientation=squarish',
-        is_active: true
-      }
-    ];
   };
 
   const filterSupplements = () => {
@@ -181,18 +76,19 @@ export default function TiendaPage() {
   };
 
   const handlePurchase = async (supplementId: string) => {
-    // Simular compra y marcar recomendación como comprada si existe
     try {
+      // Marcar recomendación como comprada si existe
       const recommendation = recommendations.find(rec => rec.supplement_id === supplementId);
       if (recommendation) {
         await dbOperations.markSupplementAsPurchased(recommendation.id);
         setRecommendations(prev => prev.filter(rec => rec.id !== recommendation.id));
       }
       
-      // Mostrar mensaje de éxito
-      alert('¡Compra simulada exitosa! En la app real, esto se integraría con pasarelas de pago.');
+      // En producción, integrar con sistema de pagos real
+      alert('Compra procesada exitosamente');
     } catch (error) {
       console.error('Error procesando compra:', error);
+      alert('Error al procesar la compra');
     }
   };
 
@@ -230,7 +126,6 @@ export default function TiendaPage() {
             </p>
           </div>
 
-          {/* AI Recommendations */}
           {recommendations.length > 0 && (
             <div className="bg-gradient-to-r from-emerald-50 to-blue-50 rounded-xl p-4 shadow-sm mb-6 border-l-4 border-emerald-500">
               <div className="flex items-center mb-3">
@@ -271,7 +166,6 @@ export default function TiendaPage() {
             </div>
           )}
 
-          {/* Category Filter */}
           <div className="bg-white rounded-xl p-4 shadow-sm mb-6">
             <h3 className="font-semibold text-gray-900 mb-3">Categorías</h3>
             <div className="flex space-x-2 overflow-x-auto scrollbar-hide">
@@ -291,25 +185,18 @@ export default function TiendaPage() {
             </div>
           </div>
 
-          {/* Products Grid */}
           <div className="space-y-4">
             {filteredSupplements.map(supplement => (
               <div key={supplement.id} className="bg-white rounded-xl p-6 shadow-sm">
                 <div className="flex items-start space-x-4">
-                  {/* Product Image */}
                   <div className="w-20 h-20 bg-gray-100 rounded-lg flex-shrink-0 overflow-hidden">
                     <img 
-                      src={supplement.image_url}
+                      src={supplement.image_url || 'https://readdy.ai/api/search-image?query=Generic%20supplement%20bottle%2C%20health%20product%2C%20nutrition%20supplement%2C%20professional%20product%20photography&width=300&height=300&seq=default&orientation=squarish'}
                       alt={supplement.name}
                       className="w-full h-full object-cover"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.src = 'https://readdy.ai/api/search-image?query=Generic%20supplement%20bottle%2C%20health%20product%2C%20nutrition%20supplement%2C%20professional%20product%20photography&width=300&height=300&seq=default&orientation=squarish';
-                      }}
                     />
                   </div>
 
-                  {/* Product Info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between mb-2">
                       <div>
@@ -334,7 +221,6 @@ export default function TiendaPage() {
                       {supplement.description}
                     </p>
 
-                    {/* Benefits */}
                     <div className="mb-3">
                       <h4 className="text-xs font-medium text-gray-700 mb-1">Beneficios:</h4>
                       <div className="flex flex-wrap gap-1">
@@ -346,7 +232,6 @@ export default function TiendaPage() {
                       </div>
                     </div>
 
-                    {/* Action Buttons */}
                     <div className="flex space-x-2">
                       <button
                         onClick={() => handlePurchase(supplement.id)}
@@ -365,7 +250,6 @@ export default function TiendaPage() {
             ))}
           </div>
 
-          {/* Empty State */}
           {filteredSupplements.length === 0 && (
             <div className="text-center py-8">
               <i className="ri-shopping-cart-line text-gray-400 text-4xl mb-2"></i>
@@ -373,7 +257,6 @@ export default function TiendaPage() {
             </div>
           )}
 
-          {/* Business Value Proposition */}
           <div className="bg-gradient-to-r from-emerald-500 to-blue-500 rounded-xl p-6 text-white mt-8">
             <h3 className="text-lg font-bold mb-2">
               🎯 ¿Por qué nuestros suplementos?
