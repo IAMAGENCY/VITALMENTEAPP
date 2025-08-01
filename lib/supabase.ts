@@ -46,6 +46,9 @@ export interface Alimento {
   created_at?: string;
 }
 
+// Alias para compatibilidad con código existente
+export interface Food extends Alimento {}
+
 export interface RegistroEjercicio {
   id: string;
   usuario_id: string;
