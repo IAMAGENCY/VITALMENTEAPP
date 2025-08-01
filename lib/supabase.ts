@@ -166,6 +166,24 @@ export const dbOperations = {
       .single();
     
     return { data, error };
+  },
+
+  async getFoods() {
+    const { data, error } = await supabase
+      .from('alimentos')
+      .select('*')
+      .order('nombre');
+    
+    return { data, error };
+  },
+
+  async getAllSupplements() {
+    const { data, error } = await supabase
+      .from('suplementos')
+      .select('*')
+      .order('nombre');
+    
+    return { data, error };
   }
 };
 
@@ -520,3 +538,123 @@ export const calcularCaloriasPorEjercicio = (
 };
 
 export default supabase;
+
+// Función para inicializar la base de datos con datos de ejemplo
+export const initializeDatabase = async () => {
+  try {
+    console.log('🚀 Inicializando base de datos...');
+
+    // Verificar si ya existen datos
+    const { data: existingUsers } = await supabase
+      .from('usuarios')
+      .select('id')
+      .limit(1);
+
+    if (existingUsers && existingUsers.length > 0) {
+      console.log('✅ Base de datos ya inicializada');
+      return { success: true, message: 'Base de datos ya contiene datos' };
+    }
+
+    // Insertar usuario de ejemplo
+    const { data: userData, error: userError } = await supabase
+      .from('usuarios')
+      .insert([{
+        nombre: 'Usuario',
+        apellidos: 'Ejemplo',
+        email: 'usuario@vitalmente.com',
+        telefono: '1234567890',
+        genero: 'masculino',
+        peso: 70,
+        altura: 175,
+        nivel_actividad: 'moderado',
+        objetivo: 'mantener_peso',
+        subscription_status: 'free',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }])
+      .select()
+      .single();
+
+    if (userError) {
+      console.error('❌ Error creando usuario:', userError);
+      return { success: false, error: userError };
+    }
+
+    // Insertar alimentos de ejemplo
+    const alimentosEjemplo = [
+      {
+        nombre: 'Arroz blanco cocido',
+        categoria: 'cereales',
+        calorias_por_100g: 130,
+        proteinas_por_100g: 2.7,
+        carbohidratos_por_100g: 28,
+        grasas_por_100g: 0.3,
+        fibra_por_100g: 0.4
+      },
+      {
+        nombre: 'Pollo pechuga sin piel',
+        categoria: 'carnes',
+        calorias_por_100g: 165,
+        proteinas_por_100g: 31,
+        carbohidratos_por_100g: 0,
+        grasas_por_100g: 3.6,
+        fibra_por_100g: 0
+      },
+      {
+        nombre: 'Banana',
+        categoria: 'frutas',
+        calorias_por_100g: 89,
+        proteinas_por_100g: 1.1,
+        carbohidratos_por_100g: 23,
+        grasas_por_100g: 0.3,
+        fibra_por_100g: 2.6
+      }
+    ];
+
+    const { error: alimentosError } = await supabase
+      .from('alimentos')
+      .insert(alimentosEjemplo);
+
+    if (alimentosError) {
+      console.error('❌ Error insertando alimentos:', alimentosError);
+    }
+
+    // Insertar suplementos de ejemplo (si la tabla existe)
+    const suplementosEjemplo = [
+      {
+        nombre: 'Proteína Whey',
+        categoria: 'proteinas',
+        descripcion: 'Proteína de suero de leche',
+        dosis_recomendada: '30g',
+        created_at: new Date().toISOString()
+      },
+      {
+        nombre: 'Creatina',
+        categoria: 'rendimiento',
+        descripcion: 'Monohidrato de creatina',
+        dosis_recomendada: '5g',
+        created_at: new Date().toISOString()
+      }
+    ];
+
+    const { error: suplementosError } = await supabase
+      .from('suplementos')
+      .insert(suplementosEjemplo);
+
+    if (suplementosError) {
+      console.log('⚠️ Tabla suplementos no existe o error insertando:', suplementosError.message);
+    }
+
+    console.log('✅ Base de datos inicializada correctamente');
+    
+    return { 
+      success: true, 
+      message: 'Base de datos inicializada con datos de ejemplo',
+      userData 
+    };
+
+  } catch (error) {
+    console.error('❌ Error inicializando base de datos:', error);
+    return { success: false, error };
+  }
+};
