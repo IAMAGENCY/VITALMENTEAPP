@@ -52,21 +52,21 @@ export interface Alimento {
   created_at?: string;
 }
 
-// Interface actualizada para Food con campos corregidos
+// Interface Food - MANTENIENDO LOS NOMBRES CORRECTOS _per_100g
 export interface Food {
   id: string;
-  name: string;                  // Mapea a 'nombre'
-  name_en?: string;             // Nombre en inglés
-  category: string;              // Mapea a 'categoria'
-  category_en?: string;         // Categoría en inglés
-  calories_per_100g: number;     // Mapea a 'calorias_por_100g'
-  proteins: number;              // Mapea a 'proteinas_por_100g' (corregido)
-  carbs: number;                 // Mapea a 'carbohidratos_por_100g' (corregido)
-  fats: number;                  // Mapea a 'grasas_por_100g' (corregido)
-  fiber?: number;                // Mapea a 'fibra_por_100g' (corregido)
-  sugar?: number;                // Azúcares
-  is_custom?: boolean;           // Campo adicional para alimentos personalizados
-  created_at?: string;
+  name: string;                     // Nombre del alimento
+  name_en?: string;                 // Nombre en inglés (opcional)
+  category: string;                 // Categoría del alimento
+  category_en?: string;             // Categoría en inglés (opcional)
+  calories_per_100g: number;        // Calorías por 100g
+  protein_per_100g: number;         // Proteínas por 100g ✅ CORRECTO
+  carbs_per_100g: number;           // Carbohidratos por 100g ✅ CORRECTO
+  fat_per_100g: number;             // Grasas por 100g ✅ CORRECTO
+  fiber_per_100g?: number;          // Fibra por 100g ✅ CORRECTO
+  sugar?: number;                   // Azúcares por 100g
+  is_custom?: boolean;              // Alimento personalizado
+  created_at?: string;              // Fecha de creación
 }
 
 export interface RegistroEjercicio {
@@ -168,7 +168,7 @@ export const dbOperations = {
       .from('usuarios')
       .insert([{
         ...userData,
-        apellidos: userData.apellidos || null, // Cambiar a null en lugar de string vacío
+        apellidos: userData.apellidos || null,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       }])
@@ -552,7 +552,7 @@ export const loadInitialFoods = async () => {
       return true;
     }
 
-    // Lista de alimentos iniciales básicos
+    // Lista de alimentos iniciales básicos - USANDO LOS NOMBRES CORRECTOS
     const initialFoods = [
       {
         name: 'Manzana',
@@ -560,10 +560,10 @@ export const loadInitialFoods = async () => {
         category: 'Frutas',
         category_en: 'Fruits',
         calories_per_100g: 52,
-        proteins: 0.3,
-        carbs: 14,
-        fats: 0.2,
-        fiber: 2.4,
+        protein_per_100g: 0.3,        // ✅ CORRECTO
+        carbs_per_100g: 14,           // ✅ CORRECTO
+        fat_per_100g: 0.2,            // ✅ CORRECTO
+        fiber_per_100g: 2.4,          // ✅ CORRECTO
         sugar: 10.4
       },
       {
@@ -572,10 +572,10 @@ export const loadInitialFoods = async () => {
         category: 'Proteínas',
         category_en: 'Proteins',
         calories_per_100g: 165,
-        proteins: 31,
-        carbs: 0,
-        fats: 3.6,
-        fiber: 0,
+        protein_per_100g: 31,         // ✅ CORRECTO
+        carbs_per_100g: 0,            // ✅ CORRECTO
+        fat_per_100g: 3.6,            // ✅ CORRECTO
+        fiber_per_100g: 0,            // ✅ CORRECTO
         sugar: 0
       },
       {
@@ -584,10 +584,10 @@ export const loadInitialFoods = async () => {
         category: 'Cereales',
         category_en: 'Grains',
         calories_per_100g: 130,
-        proteins: 2.7,
-        carbs: 28,
-        fats: 0.3,
-        fiber: 0.4,
+        protein_per_100g: 2.7,        // ✅ CORRECTO
+        carbs_per_100g: 28,           // ✅ CORRECTO
+        fat_per_100g: 0.3,            // ✅ CORRECTO
+        fiber_per_100g: 0.4,          // ✅ CORRECTO
         sugar: 0.1
       },
       {
@@ -596,10 +596,10 @@ export const loadInitialFoods = async () => {
         category: 'Verduras',
         category_en: 'Vegetables',
         calories_per_100g: 34,
-        proteins: 2.8,
-        carbs: 7,
-        fats: 0.4,
-        fiber: 2.6,
+        protein_per_100g: 2.8,        // ✅ CORRECTO
+        carbs_per_100g: 7,            // ✅ CORRECTO
+        fat_per_100g: 0.4,            // ✅ CORRECTO
+        fiber_per_100g: 2.6,          // ✅ CORRECTO
         sugar: 1.5
       },
       {
@@ -608,10 +608,10 @@ export const loadInitialFoods = async () => {
         category: 'Proteínas',
         category_en: 'Proteins',
         calories_per_100g: 208,
-        proteins: 25,
-        carbs: 0,
-        fats: 12,
-        fiber: 0,
+        protein_per_100g: 25,         // ✅ CORRECTO
+        carbs_per_100g: 0,            // ✅ CORRECTO
+        fat_per_100g: 12,             // ✅ CORRECTO
+        fiber_per_100g: 0,            // ✅ CORRECTO
         sugar: 0
       },
       {
@@ -620,10 +620,10 @@ export const loadInitialFoods = async () => {
         category: 'Cereales',
         category_en: 'Grains',
         calories_per_100g: 389,
-        proteins: 16.9,
-        carbs: 66.3,
-        fats: 6.9,
-        fiber: 10.6,
+        protein_per_100g: 16.9,       // ✅ CORRECTO
+        carbs_per_100g: 66.3,         // ✅ CORRECTO
+        fat_per_100g: 6.9,            // ✅ CORRECTO
+        fiber_per_100g: 10.6,         // ✅ CORRECTO
         sugar: 0.99
       },
       {
@@ -632,10 +632,10 @@ export const loadInitialFoods = async () => {
         category: 'Proteínas',
         category_en: 'Proteins',
         calories_per_100g: 155,
-        proteins: 13,
-        carbs: 1.1,
-        fats: 11,
-        fiber: 0,
+        protein_per_100g: 13,         // ✅ CORRECTO
+        carbs_per_100g: 1.1,          // ✅ CORRECTO
+        fat_per_100g: 11,             // ✅ CORRECTO
+        fiber_per_100g: 0,            // ✅ CORRECTO
         sugar: 1.1
       },
       {
@@ -644,10 +644,10 @@ export const loadInitialFoods = async () => {
         category: 'Frutas',
         category_en: 'Fruits',
         calories_per_100g: 89,
-        proteins: 1.1,
-        carbs: 22.8,
-        fats: 0.3,
-        fiber: 2.6,
+        protein_per_100g: 1.1,        // ✅ CORRECTO
+        carbs_per_100g: 22.8,         // ✅ CORRECTO
+        fat_per_100g: 0.3,            // ✅ CORRECTO
+        fiber_per_100g: 2.6,          // ✅ CORRECTO
         sugar: 12.2
       }
     ];
