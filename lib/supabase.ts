@@ -120,6 +120,64 @@ export interface Workout {
   updated_at?: string;
 }
 
+// ========================= NUEVAS INTERFACES AGREGADAS =========================
+
+export interface Supplement {
+  id: string;
+  created_at?: string;
+  updated_at?: string;
+  name: string;
+  nombre?: string;
+  brand: string;
+  marca?: string;
+  category: string;
+  categoria?: string;
+  description: string;
+  descripcion?: string;
+  benefits?: string[];
+  beneficios?: string[];
+  price: number;
+  precio?: number;
+  currency?: string;
+  moneda?: string;
+  image_url?: string;
+  imagen_url?: string;
+  rating?: number;
+  calificacion?: number;
+  reviews_count?: number;
+  cantidad_resenas?: number;
+  is_recommended?: boolean;
+  es_recomendado?: boolean;
+  dosage?: string;
+  dosis?: string;
+  ingredients?: string[];
+  ingredientes?: string[];
+  warnings?: string[];
+  advertencias?: string[];
+}
+
+export interface SupplementRecommendation {
+  id: string;
+  created_at?: string;
+  updated_at?: string;
+  user_id: string;
+  usuario_id?: string;
+  supplement_id: string;
+  suplemento_id?: string;
+  recommended_dosage: string;
+  dosis_recomendada?: string;
+  frequency: string;
+  frecuencia?: string;
+  duration_weeks?: number;
+  duracion_semanas?: number;
+  reason?: string;
+  razon?: string;
+  priority?: number;
+  prioridad?: number;
+  is_active?: boolean;
+  esta_activo?: boolean;
+}
+
 // ========================= DATABASE OPERATIONS =========================
 
 export const dbOperations = {
@@ -310,6 +368,67 @@ getUserByEmail: async (email: string) => {
     } catch (error) {
       console.error('Error in getAllSupplements:', error);
       return { data: [], error: error as any };
+    }
+  },
+
+  // Obtener suplemento por ID
+  getSupplementById: async (id: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('supplements')
+        .select('*')
+        .eq('id', id)
+        .single();
+      
+      return { data, error };
+    } catch (error) {
+      return { data: null, error };
+    }
+  },
+
+  // Crear nuevo suplemento
+  createSupplement: async (supplementData: Omit<Supplement, 'id' | 'created_at' | 'updated_at'>) => {
+    try {
+      const { data, error } = await supabase
+        .from('supplements')
+        .insert([supplementData])
+        .select()
+        .single();
+      
+      return { data, error };
+    } catch (error) {
+      return { data: null, error };
+    }
+  },
+
+  // Obtener recomendaciones de suplementos para un usuario
+  getUserSupplementRecommendations: async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('supplement_recommendations')
+        .select('*, supplements(*)')
+        .eq('user_id', userId)
+        .eq('is_active', true)
+        .order('priority', { ascending: false });
+      
+      return { data, error };
+    } catch (error) {
+      return { data: null, error };
+    }
+  },
+
+  // Crear recomendación de suplemento
+  createSupplementRecommendation: async (recommendationData: Omit<SupplementRecommendation, 'id' | 'created_at' | 'updated_at'>) => {
+    try {
+      const { data, error } = await supabase
+        .from('supplement_recommendations')
+        .insert([recommendationData])
+        .select()
+        .single();
+      
+      return { data, error };
+    } catch (error) {
+      return { data: null, error };
     }
   },
 
@@ -829,225 +948,4 @@ getUserByEmail: async (email: string) => {
         .order('created_at', { ascending: false });
 
       return { data: data || [], error };
-    } catch (error) {
-      console.error('Error in getUserMealsByDateAndType:', error);
-      return { data: [], error: error as any };
-    }
-  }
-};
-
-// ========================= SUBSCRIPTION OPERATIONS =========================
-
-export const subscriptionOperations = {
-  updateSubscription: async (userId: string, plan: string, endDate: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('usuarios')
-        .update({
-          subscription_status: plan,
-          subscription_end_date: endDate,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', userId);
-      return { data, error };
-    } catch (error) {
-      console.error('Error in updateSubscription:', error);
-      return { data: null, error: error as any };
-    }
-  },
-
-  cancelSubscription: async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('usuarios')
-        .update({
-          subscription_status: 'free',
-          subscription_end_date: null,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', userId);
-      return { data, error };
-    } catch (error) {
-      console.error('Error in cancelSubscription:', error);
-      return { data: null, error: error as any };
-    }
-  },
-
-  checkSubscriptionStatus: async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('usuarios')
-        .select('subscription_status, subscription_end_date')
-        .eq('id', userId)
-        .single();
-      return { data, error };
-    } catch (error) {
-      console.error('Error in checkSubscriptionStatus:', error);
-      return { data: null, error: error as any };
-    }
-  },
-
-  isSubscriptionActive: async (userId: string) => {
-    try {
-      const { data, error } = await subscriptionOperations.checkSubscriptionStatus(userId);
-      
-      if (error || !data) {
-        return { active: false, plan: 'free' };
-      }
-
-      const now = new Date();
-      const endDate = data.subscription_end_date ? new Date(data.subscription_end_date) : null;
-      
-      const isActive = data.subscription_status !== 'free' && 
-                      (!endDate || endDate > now);
-
-      return { 
-        active: isActive, 
-        plan: data.subscription_status || 'free',
-        endDate: data.subscription_end_date 
-      };
-    } catch (error) {
-      console.error('Error in isSubscriptionActive:', error);
-      return { active: false, plan: 'free' };
-    }
-  }
-};
-
-// ========================= ALIMENTACIÓN OPERATIONS =========================
-
-export const alimentacionOperations = {
-  getAlimentos: async () => {
-    try {
-      const { data, error } = await supabase
-        .from('alimentos')
-        .select('*')
-        .order('nombre');
-      return { data: data || [], error };
-    } catch (error) {
-      console.error('Error in getAlimentos:', error);
-      return { data: [], error: error as any };
-    }
-  },
-
-  createAlimento: async (alimentoData: Omit<Alimento, 'id' | 'created_at'>) => {
-    try {
-      const { data, error } = await supabase
-        .from('alimentos')
-        .insert([{
-          ...alimentoData,
-          created_at: new Date().toISOString()
-        }])
-        .select()
-        .single();
-      return { data, error };
-    } catch (error) {
-      console.error('Error in createAlimento:', error);
-      return { data: null, error: error as any };
-    }
-  },
-
-  updateAlimento: async (id: string, alimentoData: Partial<Alimento>) => {
-    try {
-      const { data, error } = await supabase
-        .from('alimentos')
-        .update(alimentoData)
-        .eq('id', id)
-        .select()
-        .single();
-      return { data, error };
-    } catch (error) {
-      console.error('Error in updateAlimento:', error);
-      return { data: null, error: error as any };
-    }
-  },
-
-  deleteAlimento: async (id: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('alimentos')
-        .delete()
-        .eq('id', id);
-      return { data, error };
-    } catch (error) {
-      console.error('Error in deleteAlimento:', error);
-      return { data: null, error: error as any };
-    }
-  },
-
-  searchAlimentos: async (searchTerm: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('alimentos')
-        .select('*')
-        .ilike('nombre', `%${searchTerm}%`)
-        .order('nombre')
-        .limit(50);
-      return { data: data || [], error };
-    } catch (error) {
-      console.error('Error in searchAlimentos:', error);
-      return { data: [], error: error as any };
-    }
-  }
-};
-
-// ========================= UTILITY FUNCTIONS =========================
-
-export const initializeDatabase = async () => {
-  try {
-    // Verificar conexión con usuarios
-    const { data, error } = await supabase
-      .from('usuarios')
-      .select('count', { count: 'exact' })
-      .limit(1);
-    
-    if (error) {
-      console.error('Error connecting to database:', error);
-      return { success: false, error };
-    }
-
-    console.log('Database connected successfully');
-    return { success: true, data };
-  } catch (error) {
-    console.error('Database initialization failed:', error);
-    return { success: false, error };
-  }
-};
-
-// Función helper para validar datos de usuario
-export const validateUserData = (userData: Partial<Usuario>): { valid: boolean; errors: string[] } => {
-  const errors: string[] = [];
-
-  if (!userData.email) {
-    errors.push('Email es requerido');
-  } else if (!/\S+@\S+\.\S+/.test(userData.email)) {
-    errors.push('Email debe tener formato válido');
-  }
-
-  if (!userData.nombre || userData.nombre.trim().length < 2) {
-    errors.push('Nombre debe tener al menos 2 caracteres');
-  }
-
-  if (userData.altura && (userData.altura < 100 || userData.altura > 250)) {
-    errors.push('Altura debe estar entre 100 y 250 cm');
-  }
-
-  if (userData.peso && (userData.peso < 30 || userData.peso > 300)) {
-    errors.push('Peso debe estar entre 30 y 300 kg');
-  }
-
-  return { valid: errors.length === 0, errors };
-};
-
-// Función helper para calcular macros
-export const calculateMacros = (food: Food, gramos: number) => {
-  const factor = gramos / 100;
-  return {
-    calorias: Math.round(food.calorias_por_100g * factor),
-    proteinas: Math.round(food.proteinas_por_100g * factor * 10) / 10,
-    carbohidratos: Math.round(food.carbohidratos_por_100g * factor * 10) / 10,
-    grasas: Math.round(food.grasas_por_100g * factor * 10) / 10,
-    fibra: food.fibra_por_100g ? Math.round(food.fibra_por_100g * factor * 10) / 10 : 0,
-    azucares: food.azucares_por_100g ? Math.round(food.azucares_por_100g * factor * 10) / 10 : 0,
-    sodio: food.sodio_por_100g ? Math.round(food.sodio_por_100g * factor * 10) / 10 : 0
-  };
-};
+    } catch
