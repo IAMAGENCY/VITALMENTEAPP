@@ -244,6 +244,20 @@ export const dbOperations = {
       .limit(limit);
     
     return { data, error };
+  },
+
+  async markInsightAsViewed(insightId: string) {
+    try {
+      const { data, error } = await supabase
+        .from('user_insights')
+        .update({ is_viewed: true, viewed_at: new Date().toISOString() })
+        .eq('id', insightId);
+      
+      return { data, error };
+    } catch (error) {
+      console.error('Error marking insight as viewed:', error);
+      return { data: null, error };
+    }
   }
 };
 
