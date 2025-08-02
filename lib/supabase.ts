@@ -128,6 +128,17 @@ export interface Subscription {
   created_at?: string;
 }
 
+export interface UserInsight {
+  id: string;
+  user_id: string;
+  type: 'tip' | 'warning' | 'achievement' | 'recommendation';
+  title: string;
+  message: string;
+  is_viewed: boolean;
+  priority: 'low' | 'medium' | 'high';
+  created_at: string;
+}
+
 // Operaciones de base de datos
 export const dbOperations = {
   async getUsers() {
@@ -219,6 +230,18 @@ export const dbOperations = {
       .from('suplementos')
       .select('*')
       .order('nombre');
+    
+    return { data, error };
+  },
+
+  async getUserInsights(userId: string, limit: number = 10) {
+    const { data, error } = await supabase
+      .from('user_insights')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('is_viewed', false)
+      .order('created_at', { ascending: false })
+      .limit(limit);
     
     return { data, error };
   }
