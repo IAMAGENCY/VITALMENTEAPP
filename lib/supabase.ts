@@ -133,13 +133,15 @@ export interface Workout {
   updated_at?: string;
 }
 
-// 🔧 AGREGANDO INTERFAZ MINDFULNESS RESOURCE FALTANTE
+// 🔧 CORRIGIENDO INTERFAZ MINDFULNESS RESOURCE - Cambio de 'type' a 'category'
 export interface MindfulnessResource {
   id: string;
   title: string;
   description?: string;
-  type: 'meditation' | 'breathing' | 'relaxation' | 'mindset';
+  category: 'meditation' | 'relaxation' | 'breathing' | 'mindset'; // CAMBIADO: type → category
+  type: 'youtube' | 'spotify'; // AGREGADO: type para plataforma
   content_url: string;
+  url: string; // AGREGADO: url principal
   duration: number;
   difficulty: 'principiante' | 'intermedio' | 'avanzado';
   tags: string[];
@@ -734,13 +736,12 @@ export const dbOperations = {
     }
   },
 
-  // 🔧 MINDFULNESS RESOURCES - FUNCIÓN FALTANTE AGREGADA
+  // 🔧 MINDFULNESS RESOURCES - FUNCIONES CORREGIDAS
   getAllMindfulnessResources: async () => {
     try {
       const { data, error } = await supabase
         .from('mindfulness_resources')
         .select('*')
-        .eq('is_active', true)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -804,17 +805,17 @@ export const dbOperations = {
     }
   },
 
-  getMindfulnessResourcesByType: async (type: string) => {
+  getMindfulnessResourcesByCategory: async (category: string) => {
     try {
       const { data, error } = await supabase
         .from('mindfulness_resources')
         .select('*')
-        .eq('type', type)
+        .eq('category', category)
         .eq('is_active', true)
         .order('created_at', { ascending: false });
       return { data: data || [], error };
     } catch (error) {
-      console.error('Error in getMindfulnessResourcesByType:', error);
+      console.error('Error in getMindfulnessResourcesByCategory:', error);
       return { data: [], error: error as any };
     }
   },
@@ -965,24 +966,119 @@ export const dbOperations = {
     }
   },
 
+  // ========== WATER INTAKE ==========
+  getUserWaterIntakeByDate: async (userId: string, date: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('water_intake')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('date', date)
+        .order('created_at', { ascending: false });
+      return { data: data || [], error };
+    } catch (error) {
+      console.error('Error in getUserWaterIntakeByDate:', error);
+      return { data: [], error: error as any };
+    }
+  },
+
+  createWaterIntake: async (waterData: Omit<WaterIntake, 'id' | 'created_at' | 'updated_at'>) => {
+    try {
+      const { data, error } = await supabase
+        .from('water_intake')
+        .insert([{
+          ...waterData,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }])
+        .select()
+        .single();
+      return { data, error };
+    } catch (error) {
+      console.error('Error in createWaterIntake:', error);
+      return { data: null, error: error as any };
+    }
+  },
+
+  updateWaterIntake: async (intakeId: string, waterData: Partial<WaterIntake>) => {
+    try {
+      const { data, error } = await supabase
+        .from('water_intake')
+        .update({
+          ...waterData,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', intakeId)
+        .select()
+        .single();
+      return { data, error };
+    } catch (error) {
+      console.error('Error in updateWaterIntake:', error);
+      return { data: null, error: error as any };
+    }
+  },
+
+  deleteWaterIntake: async (intakeId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('water_intake')
+        .delete()
+        .eq('id', intakeId);
+      return { data, error };
+    } catch (error) {
+      console.error('Error in deleteWaterIntake:', error);
+      return { data: null, error: error as any };
+    }
+  },
+
+  getTotalWaterIntakeByDate: async (userId: string, date: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('water_intake')
+        .select('amount')
+        .eq('user_id', userId)
+        .eq('date', date);
+
+      if (error) {
+        console.error('Error in getTotalWaterIntakeByDate:', error);
+        return { total: 0, error };
+      }
+
+      const total = data?.reduce((sum, intake) => sum + intake.amount, 0) || 0;
+      return { total, error: null };
+    } catch (error) {
+      console.error('Error in getTotalWaterIntakeByDate:', error);
+      return { total: 0, error: error as any };
+    }
+  },
+
   // ========== USER INSIGHTS ==========
-  getUserInsights: async (userId: string, limit: number = 5) => {
+  getUserInsights: async (userId: string) => {
     try {
       const { data, error } = await supabase
         .from('user_insights')
         .select('*')
         .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(limit);
-
-      if (error) {
-        console.error('Error fetching user insights:', error);
-        return { data: null, error };
-      }
-
-      return { data: data || [], error: null };
+        .order('created_at', { ascending: false });
+      return { data: data || [], error };
     } catch (error) {
-      console.error('Exception in getUserInsights:', error);
+      console.error('Error in getUserInsights:', error);
+      return { data: [], error: error as any };
+    }
+  },
+
+  getUnviewedUserInsights: async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('user_insights')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('is_viewed', false)
+        .order('priority', { ascending: false })
+        .order('created_at', { ascending: false });
+      return { data: data || [], error };
+    } catch (error) {
+      console.error('Error in getUnviewedUserInsights:', error);
       return { data: [], error: error as any };
     }
   },
@@ -1009,12 +1105,14 @@ export const dbOperations = {
     try {
       const { data, error } = await supabase
         .from('user_insights')
-        .update({ 
+        .update({
           is_viewed: true,
-          viewed: true,
+          viewed: true, // Compatibilidad
           updated_at: new Date().toISOString()
         })
-        .eq('id', insightId);
+        .eq('id', insightId)
+        .select()
+        .single();
       return { data, error };
     } catch (error) {
       console.error('Error in markInsightAsViewed:', error);
@@ -1022,276 +1120,58 @@ export const dbOperations = {
     }
   },
 
-  getUnviewedInsights: async (userId: string) => {
+  deleteUserInsight: async (insightId: string) => {
     try {
       const { data, error } = await supabase
         .from('user_insights')
-        .select('*')
-        .eq('user_id', userId)
-        .eq('is_viewed', false)
-        .order('priority', { ascending: false })
-        .order('created_at', { ascending: false });
-
-      return { data: data || [], error };
-    } catch (error) {
-      console.error('Error in getUnviewedInsights:', error);
-      return { data: [], error: error as any };
-    }
-  },
-
-  // ========== WATER INTAKE ==========
-  getWaterIntake: async (userId: string, date: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('water_intake')
-        .select('*, total_amount')
-        .eq('user_id', userId)
-        .eq('date', date)
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('Error fetching water intake:', error);
-        return { data: null, error };
-      }
-
-      return { data: data || [], error: null };
-    } catch (error) {
-      console.error('Exception in getWaterIntake:', error);
-      return { data: [], error: error as any };
-    }
-  },
-
-  createWaterIntake: async (userId: string, amount: number, date: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('water_intake')
-        .insert([{
-          user_id: userId,
-          amount: amount,
-          date: date,
-          created_at: new Date().toISOString()
-        }])
-        .select()
-        .single();
-      return { data, error };
-    } catch (error) {
-      console.error('Error in createWaterIntake:', error);
-      return { data: null, error: error as any };
-    }
-  },
-
-  addWaterIntake: async (waterData: { user_id: string; amount_ml: number; date: string }) => {
-    try {
-      const { data, error } = await supabase
-        .from('water_intake')
-        .insert([{
-          user_id: waterData.user_id,
-          amount: waterData.amount_ml,
-          date: waterData.date,
-          created_at: new Date().toISOString()
-        }])
-        .select()
-        .single();
-      return { data, error };
-    } catch (error) {
-      console.error('Error in addWaterIntake:', error);
-      return { data: null, error: error as any };
-    }
-  },
-
-  removeWaterIntake: async (intakeId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('water_intake')
         .delete()
-        .eq('id', intakeId);
+        .eq('id', insightId);
       return { data, error };
     } catch (error) {
-      console.error('Error in removeWaterIntake:', error);
+      console.error('Error in deleteUserInsight:', error);
       return { data: null, error: error as any };
     }
   },
 
-  getTodayWaterIntake: async (userId: string) => {
-    try {
-      const today = new Date().toISOString().split('T')[0];
-      const { data, error } = await supabase
-        .from('water_intake')
-        .select('*')
-        .eq('user_id', userId)
-        .eq('date', today)
-        .order('created_at', { ascending: false });
-
-      return { data: data || [], error };
-    } catch (error) {
-      console.error('Error in getTodayWaterIntake:', error);
-      return { data: [], error: error as any };
-    }
-  },
-
-  updateWaterIntakeAmount: async (intakeId: string, newAmount: number) => {
-    try {
-      const { data, error } = await supabase
-        .from('water_intake')
-        .update({ 
-          amount: newAmount,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', intakeId)
-        .select()
-        .single();
-      return { data, error };
-    } catch (error) {
-      console.error('Error in updateWaterIntakeAmount:', error);
-      return { data: null, error: error as any };
-    }
-  },
-
-  updateWaterIntake: async (intakeId: string, amount: number) => {
-    try {
-      const { data, error } = await supabase
-        .from('water_intake')
-        .update({ 
-          amount: amount,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', intakeId)
-        .select()
-        .single();
-      return { data, error };
-    } catch (error) {
-      console.error('Error in updateWaterIntake:', error);
-      return { data: null, error: error as any };
-    }
-  },
-
-  deleteWaterIntake: async (intakeId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('water_intake')
-        .delete()
-        .eq('id', intakeId);
-      return { data, error };
-    } catch (error) {
-      console.error('Error in deleteWaterIntake:', error);
-      return { data: null, error: error as any };
-    }
-  },
-
-  getDailyWaterTotal: async (userId: string, date: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('water_intake')
-        .select('amount')
-        .eq('user_id', userId)
-        .eq('date', date);
-
-      if (error) {
-        console.error('Error getting daily water total:', error);
-        return { total: 0, error };
-      }
-
-      const total = data?.reduce((sum, intake) => sum + (intake.amount || 0), 0) || 0;
-      return { total, error: null };
-    } catch (error) {
-      console.error('Exception in getDailyWaterTotal:', error);
-      return { total: 0, error: error as any };
-    }
-  }
-};
-
-// ========================= SUBSCRIPTION OPERATIONS =========================
-
-export const subscriptionOperations = {
-  getUserSubscription: async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('usuarios')
-        .select('subscription_status, subscription_end_date')
-        .eq('id', userId)
-        .single();
-      return { data, error };
-    } catch (error) {
-      console.error('Error in getUserSubscription:', error);
-      return { data: null, error: error as any };
-    }
-  },
-
-  updateSubscription: async (userId: string, subscriptionStatus: string, endDate?: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('usuarios')
-        .update({
-          subscription_status: subscriptionStatus,
-          subscription_end_date: endDate,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', userId)
-        .select()
-        .single();
-      return { data, error };
-    } catch (error) {
-      console.error('Error in updateSubscription:', error);
-      return { data: null, error: error as any };
-    }
-  },
-
-  cancelSubscription: async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('usuarios')
-        .update({
-          subscription_status: 'free',
-          subscription_end_date: null,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', userId)
-        .select()
-        .single();
-      return { data, error };
-    } catch (error) {
-      console.error('Error in cancelSubscription:', error);
-      return { data: null, error: error as any };
-    }
-  }
-};
-
-// ========================= ALIMENTACION OPERATIONS =========================
-
-export const alimentacionOperations = {
-  getRecentMeals: async (userId: string, limit: number = 10) => {
+  // ========== ANALYTICS & REPORTS ==========
+  getUserNutritionSummary: async (userId: string, startDate: string, endDate: string) => {
     try {
       const { data, error } = await supabase
         .from('user_meals')
         .select(`
           *,
           foods (
-            id,
-            nombre,
-            name,
             calorias_por_100g,
             proteinas_por_100g,
             carbohidratos_por_100g,
-            grasas_por_100g,
-            categoria
+            grasas_por_100g
           )
         `)
         .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(limit);
+        .gte('date', startDate)
+        .lte('date', endDate);
 
-      return { data: data || [], error };
+      if (error) {
+        console.error('Error in getUserNutritionSummary:', error);
+        return { data: [], error };
+      }
+
+      return { data: data || [], error: null };
     } catch (error) {
-      console.error('Error in getRecentMeals:', error);
+      console.error('Error in getUserNutritionSummary:', error);
       return { data: [], error: error as any };
     }
   },
 
-  getNutritionSummary: async (userId: string, date: string) => {
+  getUserWeeklyProgress: async (userId: string, weekStart: string) => {
     try {
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekEnd.getDate() + 6);
+
       const { data, error } = await supabase
         .from('user_meals')
         .select(`
+          date,
           portion_grams,
           foods (
             calorias_por_100g,
@@ -1301,79 +1181,67 @@ export const alimentacionOperations = {
           )
         `)
         .eq('user_id', userId)
-        .eq('date', date);
+        .gte('date', weekStart)
+        .lte('date', weekEnd.toISOString().split('T')[0]);
 
-      if (error) {
-        console.error('Error getting nutrition summary:', error);
-        return { data: null, error };
-      }
-
-      // Calcular totales
-      let totalCalorias = 0;
-      let totalProteinas = 0;
-      let totalCarbohidratos = 0;
-      let totalGrasas = 0;
-
-      data?.forEach((meal: any) => {
-        const multiplier = meal.portion_grams / 100;
-        totalCalorias += (meal.foods?.calorias_por_100g || 0) * multiplier;
-        totalProteinas += (meal.foods?.proteinas_por_100g || 0) * multiplier;
-        totalCarbohidratos += (meal.foods?.carbohidratos_por_100g || 0) * multiplier;
-        totalGrasas += (meal.foods?.grasas_por_100g || 0) * multiplier;
-      });
-
-      return {
-        data: {
-          calorias: Math.round(totalCalorias),
-          proteinas: Math.round(totalProteinas * 10) / 10,
-          carbohidratos: Math.round(totalCarbohidratos * 10) / 10,
-          grasas: Math.round(totalGrasas * 10) / 10
-        },
-        error: null
-      };
+      return { data: data || [], error };
     } catch (error) {
-      console.error('Exception in getNutritionSummary:', error);
-      return { data: null, error: error as any };
+      console.error('Error in getUserWeeklyProgress:', error);
+      return { data: [], error: error as any };
     }
   },
 
-  getMealsByType: async (userId: string, date: string, tipoComida: string) => {
-    return dbOperations.getUserMealsByDateAndType(userId, date, tipoComida);
-  }
-};
+  // ========== BATCH OPERATIONS ==========
+  batchCreateFoods: async (foodsData: Omit<Food, 'id' | 'created_at'>[]) => {
+    try {
+      const mappedFoods = foodsData.map(food => ({
+        ...food,
+        name: food.name || food.nombre,
+        nombre: food.nombre || food.name,
+        category: food.category || food.categoria,
+        categoria: food.categoria || food.category,
+        calories_per_100g: food.calories_per_100g || food.calorias_por_100g,
+        calorias_por_100g: food.calorias_por_100g || food.calories_per_100g,
+        protein_per_100g: food.protein_per_100g || food.proteinas_por_100g,
+        proteinas_por_100g: food.proteinas_por_100g || food.protein_per_100g,
+        carbs_per_100g: food.carbs_per_100g || food.carbohidratos_por_100g,
+        carbohidratos_por_100g: food.carbohidratos_por_100g || food.carbs_per_100g,
+        fat_per_100g: food.fat_per_100g || food.grasas_por_100g,
+        grasas_por_100g: food.grasas_por_100g || food.fat_per_100g,
+        created_at: new Date().toISOString()
+      }));
 
-// ========================= UTILITY FUNCTIONS =========================
-
-export const initializeDatabase = async () => {
-  try {
-    console.log('🔧 Initializing database connection...');
-    
-    // Test connection
-    const { data, error } = await supabase
-      .from('usuarios')
-      .select('id')
-      .limit(1);
-
-    if (error) {
-      console.error('❌ Database initialization failed:', error);
-      return { success: false, error };
+      const { data, error } = await supabase
+        .from('foods')
+        .insert(mappedFoods)
+        .select();
+      return { data: data || [], error };
+    } catch (error) {
+      console.error('Error in batchCreateFoods:', error);
+      return { data: [], error: error as any };
     }
+  },
 
-    console.log('✅ Database connection successful');
-    return { success: true, data };
-  } catch (error) {
-    console.error('❌ Database initialization exception:', error);
-    return { success: false, error };
+  // ========== UTILITY FUNCTIONS ==========
+  healthCheck: async () => {
+    try {
+      const { data, error } = await supabase
+        .from('usuarios')
+        .select('id')
+        .limit(1);
+      
+      return { 
+        status: error ? 'error' : 'healthy', 
+        timestamp: new Date().toISOString(),
+        error 
+      };
+    } catch (error) {
+      console.error('Error in healthCheck:', error);
+      return { 
+        status: 'error', 
+        timestamp: new Date().toISOString(),
+        error: error as any 
+      };
+    }
   }
-};
-
-// ========================= EXPORTS =========================
-
-export default supabase;
-
-// Re-export everything for convenience
-export {
-  dbOperations as db,
-  subscriptionOperations as subscriptions,
-  alimentacionOperations as alimentacion
 };
