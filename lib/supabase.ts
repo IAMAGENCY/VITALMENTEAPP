@@ -52,16 +52,19 @@ export interface Alimento {
   created_at?: string;
 }
 
-// Alias para compatibilidad con código existente
+// Interface actualizada para Food con campos corregidos
 export interface Food {
   id: string;
   name: string;                  // Mapea a 'nombre'
+  name_en?: string;             // Nombre en inglés
   category: string;              // Mapea a 'categoria'
+  category_en?: string;         // Categoría en inglés
   calories_per_100g: number;     // Mapea a 'calorias_por_100g'
-  protein_per_100g: number;      // Mapea a 'proteinas_por_100g'
-  carbs_per_100g: number;        // Mapea a 'carbohidratos_por_100g'
-  fat_per_100g: number;          // Mapea a 'grasas_por_100g'
-  fiber_per_100g?: number;       // Mapea a 'fibra_por_100g'
+  proteins: number;              // Mapea a 'proteinas_por_100g' (corregido)
+  carbs: number;                 // Mapea a 'carbohidratos_por_100g' (corregido)
+  fats: number;                  // Mapea a 'grasas_por_100g' (corregido)
+  fiber?: number;                // Mapea a 'fibra_por_100g' (corregido)
+  sugar?: number;                // Azúcares
   is_custom?: boolean;           // Campo adicional para alimentos personalizados
   created_at?: string;
 }
@@ -165,7 +168,7 @@ export const dbOperations = {
       .from('usuarios')
       .insert([{
         ...userData,
-        apellidos: userData.apellidos || '', // Valor por defecto
+        apellidos: userData.apellidos || null, // Cambiar a null en lugar de string vacío
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       }])
@@ -191,62 +194,24 @@ export const dbOperations = {
 
   async getFoods() {
     const { data, error } = await supabase
-      .from('alimentos')
+      .from('foods')
       .select('*')
-      .order('nombre');
+      .order('name');
     
-    // Mapear los datos del español al inglés para compatibilidad
-    const mappedData = data?.map(item => ({
-      id: item.id,
-      name: item.nombre,
-      category: item.categoria,
-      calories_per_100g: item.calorias_por_100g,
-      protein_per_100g: item.proteinas_por_100g,
-      carbs_per_100g: item.carbohidratos_por_100g,
-      fat_per_100g: item.grasas_por_100g,
-      fiber_per_100g: item.fibra_por_100g,
-      is_custom: item.is_custom || false,
-      created_at: item.created_at
-    }));
-    
-    return { data: mappedData, error };
+    return { data, error };
   },
 
   async createFood(foodData: Omit<Food, 'id' | 'created_at'>) {
-    // Mapear del inglés al español para la base de datos
-    const mappedData = {
-      nombre: foodData.name,
-      categoria: foodData.category,
-      calorias_por_100g: foodData.calories_per_100g,
-      proteinas_por_100g: foodData.protein_per_100g,
-      carbohidratos_por_100g: foodData.carbs_per_100g,
-      grasas_por_100g: foodData.fat_per_100g,
-      fibra_por_100g: foodData.fiber_per_100g || 0,
-      is_custom: foodData.is_custom || true,
-      created_at: new Date().toISOString()
-    };
-
     const { data, error } = await supabase
-      .from('alimentos')
-      .insert([mappedData])
+      .from('foods')
+      .insert([{
+        ...foodData,
+        created_at: new Date().toISOString()
+      }])
       .select()
       .single();
 
-    // Mapear la respuesta de vuelta al inglés
-    const mappedResponse = data ? {
-      id: data.id,
-      name: data.nombre,
-      category: data.categoria,
-      calories_per_100g: data.calorias_por_100g,
-      protein_per_100g: data.proteinas_por_100g,
-      carbs_per_100g: data.carbohidratos_por_100g,
-      fat_per_100g: data.grasas_por_100g,
-      fiber_per_100g: data.fibra_por_100g,
-      is_custom: data.is_custom,
-      created_at: data.created_at
-    } : null;
-
-    return { data: mappedResponse, error };
+    return { data, error };
   },
 
   async getAllSupplements() {
@@ -567,6 +532,146 @@ export const subscriptionOperations = {
   }
 };
 
+// Función para cargar alimentos iniciales en la base de datos
+export const loadInitialFoods = async () => {
+  try {
+    // Verificar si ya existen alimentos en la base de datos
+    const { data: existingFoods, error: checkError } = await supabase
+      .from('foods')
+      .select('id')
+      .limit(1);
+
+    if (checkError) {
+      console.error('Error checking existing foods:', checkError);
+      return false;
+    }
+
+    // Si ya existen alimentos, no cargar más
+    if (existingFoods && existingFoods.length > 0) {
+      console.log('Foods already exist in database');
+      return true;
+    }
+
+    // Lista de alimentos iniciales básicos
+    const initialFoods = [
+      {
+        name: 'Manzana',
+        name_en: 'Apple',
+        category: 'Frutas',
+        category_en: 'Fruits',
+        calories_per_100g: 52,
+        proteins: 0.3,
+        carbs: 14,
+        fats: 0.2,
+        fiber: 2.4,
+        sugar: 10.4
+      },
+      {
+        name: 'Pollo (pechuga)',
+        name_en: 'Chicken breast',
+        category: 'Proteínas',
+        category_en: 'Proteins',
+        calories_per_100g: 165,
+        proteins: 31,
+        carbs: 0,
+        fats: 3.6,
+        fiber: 0,
+        sugar: 0
+      },
+      {
+        name: 'Arroz blanco',
+        name_en: 'White rice',
+        category: 'Cereales',
+        category_en: 'Grains',
+        calories_per_100g: 130,
+        proteins: 2.7,
+        carbs: 28,
+        fats: 0.3,
+        fiber: 0.4,
+        sugar: 0.1
+      },
+      {
+        name: 'Brócoli',
+        name_en: 'Broccoli',
+        category: 'Verduras',
+        category_en: 'Vegetables',
+        calories_per_100g: 34,
+        proteins: 2.8,
+        carbs: 7,
+        fats: 0.4,
+        fiber: 2.6,
+        sugar: 1.5
+      },
+      {
+        name: 'Salmón',
+        name_en: 'Salmon',
+        category: 'Proteínas',
+        category_en: 'Proteins',
+        calories_per_100g: 208,
+        proteins: 25,
+        carbs: 0,
+        fats: 12,
+        fiber: 0,
+        sugar: 0
+      },
+      {
+        name: 'Avena',
+        name_en: 'Oats',
+        category: 'Cereales',
+        category_en: 'Grains',
+        calories_per_100g: 389,
+        proteins: 16.9,
+        carbs: 66.3,
+        fats: 6.9,
+        fiber: 10.6,
+        sugar: 0.99
+      },
+      {
+        name: 'Huevo',
+        name_en: 'Egg',
+        category: 'Proteínas',
+        category_en: 'Proteins',
+        calories_per_100g: 155,
+        proteins: 13,
+        carbs: 1.1,
+        fats: 11,
+        fiber: 0,
+        sugar: 1.1
+      },
+      {
+        name: 'Plátano',
+        name_en: 'Banana',
+        category: 'Frutas',
+        category_en: 'Fruits',
+        calories_per_100g: 89,
+        proteins: 1.1,
+        carbs: 22.8,
+        fats: 0.3,
+        fiber: 2.6,
+        sugar: 12.2
+      }
+    ];
+
+    // Insertar alimentos iniciales
+    const { data, error } = await supabase
+      .from('foods')
+      .insert(initialFoods)
+      .select();
+
+    if (error) {
+      console.error('Error loading initial foods:', error);
+      return false;
+    }
+
+    console.log(`Successfully loaded ${data?.length || 0} initial foods`);
+    return true;
+
+  } catch (error) {
+    console.error('Error in loadInitialFoods:', error);
+    return false;
+  }
+};
+
 // Funciones auxiliares
 export const calcularCalorias = (alimento: Alimento, cantidad: number): number => {
   return Math.round((alimento.calorias_por_100g * cantidad) / 100);
@@ -652,7 +757,14 @@ export const initializeDatabase = async () => {
       return { success: false, error: userError };
     }
 
-    // Insertar alimentos de ejemplo
+    // Inicializar alimentos usando la función loadInitialFoods
+    const foodsLoaded = await loadInitialFoods();
+    
+    if (!foodsLoaded) {
+      console.log('⚠️ Warning: Could not load initial foods');
+    }
+
+    // Insertar alimentos de ejemplo en tabla alimentos (formato español)
     const alimentosEjemplo = [
       {
         nombre: 'Arroz blanco cocido',
