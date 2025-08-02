@@ -302,7 +302,7 @@ export default function MindfulnessManager() {
 
     try {
       for (const resource of initialResources) {
-        await dbOperations.addMindfulnessResource(resource);
+        await dbOperations.createMindfulnessResource(resource);
       }
       await loadResources();
       alert('¡Base de datos inicializada con 24 recursos de mindfulness!');
