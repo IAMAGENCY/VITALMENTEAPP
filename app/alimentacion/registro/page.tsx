@@ -148,7 +148,7 @@ export default function RegistroPage() {
               carbs: calculateNutrition(meal.foods, meal.portion_grams).carbs,
               fat: calculateNutrition(meal.foods, meal.portion_grams).fat
             };
-            mealsByType[meal.meal_type as keyof typeof mealsByType].push(mealFood);
+            mealsByType[meal.tipo_comida as keyof typeof mealsByType]
           }
         });
 
@@ -204,7 +204,7 @@ export default function RegistroPage() {
       const { data: savedMeal } = await dbOperations.createUserMeal({
         user_id: userId,
         food_id: food.id,
-        meal_type: selectedMealType,
+        tipo_comida: selectedMealType,
         portion_grams: portion,
         date: selectedDate
       });
