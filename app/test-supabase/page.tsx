@@ -45,7 +45,8 @@ export default function TestSupabase() {
       // Test 3: Inicializar datos si están vacíos
       if (!foodsData || foodsData.length === 0) {
         addResult('🌱 Inicializando banco de alimentos...');
-        await initializeDatabase.loadInitialFoods();
+        // CORREGIDO: initializeDatabase es una función, no un objeto
+        await initializeDatabase();
         
         const { data: newFoods } = await dbOperations.getFoods();
         addResult(`✅ Banco inicializado con ${newFoods?.length || 0} alimentos`);
