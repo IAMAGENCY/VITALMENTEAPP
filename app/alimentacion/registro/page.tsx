@@ -177,13 +177,12 @@ export default function RegistroPage() {
 
   const calculateNutrition = (food: Food, grams: number) => {
     const factor = grams / 100;
-    return {
-      calories: Math.round(food.calories_per_100g * factor),
-      protein: Math.round(food.protein_per_100g * factor * 10) / 10,
-      carbs: Math.round(food.carbs_per_100g * factor * 10) / 10,
-      fat: Math.round(food.fat_per_100g * factor * 10) / 10
-    };
-  };
+return {
+  calories: Math.round(food.calorias_por_100g * factor),
+  protein: Math.round(food.proteinas_por_100g * factor * 10) / 10,
+  carbs: Math.round(food.carbohidratos_por_100g * factor * 10) / 10,
+  fat: Math.round(food.grasas_por_100g * factor * 10) / 10
+};
 
   const calculateDailyTotals = () => {
     const totals = { calories: 0, protein: 0, carbs: 0, fat: 0 };
