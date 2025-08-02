@@ -75,12 +75,8 @@ export default function RegistroPage() {
   const initializeUser = async () => {
     try {
       setLoading(true);
-      
-      // En producción, obtener usuario autenticado de Supabase
-      // Por ahora simulamos obtener el usuario actual
-      const currentUserId = 'auth-user-id'; // Se reemplazará con auth real
+      const currentUserId = 'auth-user-id';
       setUserId(currentUserId);
-      
     } catch (error) {
       console.error('Error inicializando usuario:', error);
     } finally {
@@ -176,12 +172,13 @@ export default function RegistroPage() {
 
   const calculateNutrition = (food: Food, grams: number) => {
     const factor = grams / 100;
-return {
-  calories: Math.round(food.calorias_por_100g * factor),
-  protein: Math.round(food.proteinas_por_100g * factor * 10) / 10,
-  carbs: Math.round(food.carbohidratos_por_100g * factor * 10) / 10,
-  fat: Math.round(food.grasas_por_100g * factor * 10) / 10
-};
+    return {
+      calories: Math.round(food.calories_per_100g * factor),
+      protein: Math.round(food.protein_per_100g * factor * 10) / 10,
+      carbs: Math.round(food.carbs_per_100g * factor * 10) / 10,
+      fat: Math.round(food.fat_per_100g * factor * 10) / 10
+    };
+  };
 
   const calculateDailyTotals = () => {
     const totals = { calories: 0, protein: 0, carbs: 0, fat: 0 };
@@ -323,7 +320,7 @@ return {
               {insights.length > 0 && (
                 <button
                   onClick={() => setShowInsights(true)}
-                  className="relative px-3 py-1 bg-emerald-600 text-white rounded-md text-sm !rounded-button"
+                  className="relative px-3 py-1 bg-emerald-600 text-white rounded-md text-sm"
                 >
                   <i className="ri-lightbulb-line mr-1"></i>
                   Insights
@@ -434,7 +431,7 @@ return {
                 <button
                   key={button.amount}
                   onClick={() => handleAddWater(button.amount)}
-                  className="py-2 bg-blue-50 text-blue-600 rounded-md text-sm hover:bg-blue-100 transition-colors !rounded-button"
+                  className="py-2 bg-blue-50 text-blue-600 rounded-md text-sm hover:bg-blue-100 transition-colors"
                 >
                   +{button.label}
                 </button>
@@ -500,7 +497,7 @@ return {
             <button
               onClick={generateAIInsights}
               disabled={isTracking || dailyTotals.calories < 100}
-              className="w-full py-3 bg-gradient-to-r from-emerald-600 to-blue-600 text-white rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed !rounded-button"
+              className="w-full py-3 bg-gradient-to-r from-emerald-600 to-blue-600 text-white rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isTracking ? (
                 <div className="flex items-center justify-center">
