@@ -139,14 +139,14 @@ export default function TiendaPage() {
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <h4 className="font-medium text-gray-900 text-sm">
-                          {rec.supplements?.name}
+                          {rec.supplement?.name}
                         </h4>
                         <p className="text-gray-600 text-xs mt-1">
                           {rec.reason}
                         </p>
                         <div className="flex items-center justify-between mt-2">
                           <span className="text-emerald-600 font-medium">
-                            ${rec.supplements?.price?.toLocaleString()}
+                            ${rec.supplement?.price?.toLocaleString()}
                           </span>
                           <span className="text-xs text-gray-500">
                             {Math.round(rec.confidence_score * 100)}% match
