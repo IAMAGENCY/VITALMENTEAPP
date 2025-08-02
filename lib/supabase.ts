@@ -76,17 +76,14 @@ export interface UserInsight {
 }
 
 export interface UserMeal {
-  id?: string;
+  id: string;
   user_id: string;
   food_id: string;
-  cantidad_gramos: number;
-  tipo_comida: 'desayuno' | 'almuerzo' | 'cena' | 'snack';
-  fecha: string;
-  calorias_consumidas: number;
-  proteinas_consumidas: number;
-  carbohidratos_consumidos: number;
-  grasas_consumidas: number;
-  created_at?: string;
+  tipo_comida: string;
+  portion_grams: number;
+  date: string;
+  created_at: string;
+  updated_at?: string; // ← AGREGADO COMO OPTIONAL
 }
 
 export interface WaterIntake {
@@ -304,13 +301,14 @@ export const dbOperations = {
     }
   },
 
-  createUserMeal: async (mealData: Omit<UserMeal, 'id' | 'created_at'>) => {
+  createUserMeal: async (mealData: Omit<UserMeal, 'id' | 'created_at' | 'updated_at'>) => {
     try {
       const { data, error } = await supabase
         .from('user_meals')
         .insert([{
           ...mealData,
-          created_at: new Date().toISOString()
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
         }])
         .select()
         .single();
@@ -321,7 +319,7 @@ export const dbOperations = {
     }
   },
 
-  // ========== USER INSIGHTS (FUNCIÓN FALTANTE) ==========
+  // ========== USER INSIGHTS ==========
   getUserInsights: async (userId: string, limit: number = 5) => {
     try {
       const { data, error } = await supabase
@@ -367,7 +365,7 @@ export const dbOperations = {
         .from('user_insights')
         .update({ 
           is_viewed: true,
-          viewed: true, // Compatibilidad con ambos campos
+          viewed: true,
           updated_at: new Date().toISOString()
         })
         .eq('id', insightId);
