@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import TabBar from '@/components/TabBar';
 import BankManager from './BankManager';
-import { dbOperations, initializeDatabase, loadInitialFoods } from '@/lib/supabase';
+import { dbOperations, initializeDatabase } from '@/lib/supabase';
 
 export default function BancoPage() {
   const [isInitialized, setIsInitialized] = useState(false);
@@ -18,7 +18,7 @@ export default function BancoPage() {
       setLoading(true);
       
       // Verificar si ya hay alimentos cargados
-      const { data: foods, error } = await dbOperations.getFoods();
+      const { data: foods, error } = await dbOperations.loadInitialFoods();
       
       if (!error && foods && foods.length > 0) {
         console.log('✅ Alimentos ya cargados:', foods.length);
