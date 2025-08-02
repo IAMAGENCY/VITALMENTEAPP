@@ -484,6 +484,145 @@ export const dbOperations = {
       console.error('Exception in getDailyWaterTotal:', error);
       return { total: 0, error: error as any };
     }
+  },
+
+  // ========== DELETE FUNCTIONS (FUNCIONES FALTANTES) ==========
+  deleteUserMeal: async (mealId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('user_meals')
+        .delete()
+        .eq('id', mealId);
+      return { data, error };
+    } catch (error) {
+      console.error('Error in deleteUserMeal:', error);
+      return { data: null, error: error as any };
+    }
+  },
+
+  updateUserMeal: async (mealId: string, mealData: Partial<UserMeal>) => {
+    try {
+      const { data, error } = await supabase
+        .from('user_meals')
+        .update({
+          ...mealData,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', mealId)
+        .select()
+        .single();
+      return { data, error };
+    } catch (error) {
+      console.error('Error in updateUserMeal:', error);
+      return { data: null, error: error as any };
+    }
+  },
+
+  deleteFood: async (foodId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('foods')
+        .delete()
+        .eq('id', foodId);
+      return { data, error };
+    } catch (error) {
+      console.error('Error in deleteFood:', error);
+      return { data: null, error: error as any };
+    }
+  },
+
+  updateFood: async (foodId: string, foodData: Partial<Food>) => {
+    try {
+      const { data, error } = await supabase
+        .from('foods')
+        .update(foodData)
+        .eq('id', foodId)
+        .select()
+        .single();
+      return { data, error };
+    } catch (error) {
+      console.error('Error in updateFood:', error);
+      return { data: null, error: error as any };
+    }
+  },
+
+  getFoodById: async (foodId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('foods')
+        .select('*')
+        .eq('id', foodId)
+        .single();
+      return { data, error };
+    } catch (error) {
+      console.error('Error in getFoodById:', error);
+      return { data: null, error: error as any };
+    }
+  },
+
+  getUserMealsByDate: async (userId: string, date: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('user_meals')
+        .select(`
+          *,
+          foods (
+            id,
+            nombre,
+            name,
+            calorias_por_100g,
+            proteinas_por_100g,
+            carbohidratos_por_100g,
+            grasas_por_100g,
+            fibra_por_100g,
+            azucares_por_100g,
+            sodio_por_100g,
+            categoria,
+            subcategoria
+          )
+        `)
+        .eq('user_id', userId)
+        .eq('date', date)
+        .order('created_at', { ascending: false });
+
+      return { data: data || [], error };
+    } catch (error) {
+      console.error('Error in getUserMealsByDate:', error);
+      return { data: [], error: error as any };
+    }
+  },
+
+  getUserMealsByDateAndType: async (userId: string, date: string, mealType: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('user_meals')
+        .select(`
+          *,
+          foods (
+            id,
+            nombre,
+            name,
+            calorias_por_100g,
+            proteinas_por_100g,
+            carbohidratos_por_100g,
+            grasas_por_100g,
+            fibra_por_100g,
+            azucares_por_100g,
+            sodio_por_100g,
+            categoria,
+            subcategoria
+          )
+        `)
+        .eq('user_id', userId)
+        .eq('date', date)
+        .eq('tipo_comida', mealType)
+        .order('created_at', { ascending: false });
+
+      return { data: data || [], error };
+    } catch (error) {
+      console.error('Error in getUserMealsByDateAndType:', error);
+      return { data: [], error: error as any };
+    }
   }
 };
 
