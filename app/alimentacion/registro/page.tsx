@@ -196,7 +196,7 @@ export default function RegistroPage() {
   };
 
   const handleAddFood = async (food: Food, portion: number) => {
-    if (!userId) return;
+    if (!userId || !food.id) return;
     
     try {
       const nutrition = calculateNutrition(food, portion);
