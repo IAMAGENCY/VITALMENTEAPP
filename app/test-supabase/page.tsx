@@ -64,16 +64,15 @@ export default function TestSupabase() {
       addResult('🧪 Probando crear alimento personalizado...');
       
       const newFood = {
-        name: `Alimento Test ${Date.now()}`,
-        category: 'Test',
-        calories_per_100g: 100,
-        protein_per_100g: 5,
-        carbs_per_100g: 15,
-        fat_per_100g: 2,
-        fiber_per_100g: 3,
-        is_custom: true
+        nombre: "Manzana Test",
+        categoria: "Frutas", 
+        calorias_por_100g: 52,
+        proteinas_por_100g: 0.3,
+        carbohidratos_por_100g: 14,
+        grasas_por_100g: 0.2,
+        fibra_por_100g: 2.4,
+        es_personalizado: true
       };
-
       const { data, error } = await dbOperations.createFood(newFood);
       
       if (error) {
