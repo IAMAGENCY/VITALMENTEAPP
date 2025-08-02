@@ -93,17 +93,26 @@ export default function BankManager({ onSelectFood, showAddFood = true }: BankMa
 
     try {
       const foodData = {
-        nombre: newFood.name,
-        name: newFood.name,
-        categoria: newFood.category,
-        calorias_por_100g: newFood.calories_per_100g,
-        proteinas_por_100g: newFood.protein_per_100g,
-        carbohidratos_por_100g: newFood.carbs_per_100g,
-        grasas_por_100g: newFood.fat_per_100g,
-        fibra_por_100g: newFood.fiber_per_100g || 0,
-        azucares_por_100g: 0,
-        sodio_por_100g: 0
-      };
+  nombre: newFood.nombre,
+  name: newFood.nombre, // Mapeo español -> inglés
+  categoria: newFood.categoria,
+  category: newFood.categoria, // Mapeo español -> inglés
+  calorias_por_100g: newFood.calorias_por_100g,
+  calories_per_100g: newFood.calorias_por_100g, // Mapeo español -> inglés
+  proteinas_por_100g: newFood.proteinas_por_100g,
+  protein_per_100g: newFood.proteinas_por_100g, // Mapeo español -> inglés
+  carbohidratos_por_100g: newFood.carbohidratos_por_100g,
+  carbs_per_100g: newFood.carbohidratos_por_100g, // Mapeo español -> inglés
+  grasas_por_100g: newFood.grasas_por_100g,
+  fat_per_100g: newFood.grasas_por_100g, // Mapeo español -> inglés
+  fibra_por_100g: newFood.fibra_por_100g,
+  fiber_per_100g: newFood.fibra_por_100g, // Mapeo español -> inglés
+  azucares_por_100g: newFood.azucares_por_100g,
+  sugar_per_100g: newFood.azucares_por_100g, // Mapeo español -> inglés
+  sodio_por_100g: newFood.sodio_por_100g,
+  sodium_per_100g: newFood.sodio_por_100g // Mapeo español -> inglés
+};
+
 
       const { data, error } = await dbOperations.createFood(foodData);
 
