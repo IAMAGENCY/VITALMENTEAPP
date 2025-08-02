@@ -96,6 +96,30 @@ export interface WaterIntake {
   updated_at?: string;
 }
 
+export interface Workout {
+  id?: string;
+  name: string;
+  nombre?: string;
+  category: string;
+  categoria?: string;
+  description?: string;
+  descripcion?: string;
+  difficulty?: string;
+  dificultad?: string;
+  duration?: number;
+  duracion?: number;
+  exercises?: any[];
+  ejercicios?: any[];
+  muscle_groups?: string[];
+  grupos_musculares?: string[];
+  equipment?: string[];
+  equipamiento?: string[];
+  active?: boolean;
+  activo?: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
 // ========================= DATABASE OPERATIONS =========================
 
 export const dbOperations = {
@@ -266,6 +290,104 @@ export const dbOperations = {
     } catch (error) {
       console.error('Error in getAllSupplements:', error);
       return { data: [], error: error as any };
+    }
+  },
+
+  // ========== WORKOUTS ==========
+  getActiveWorkoutsByCategory: async (category: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('workouts')
+        .select('*')
+        .eq('category', category)
+        .eq('active', true)
+        .order('name', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching workouts by category:', error);
+        return { data: [], error };
+      }
+
+      return { data: data || [], error: null };
+    } catch (error) {
+      console.error('Error in getActiveWorkoutsByCategory:', error);
+      return { data: [], error: error as any };
+    }
+  },
+
+  getAllWorkouts: async () => {
+    try {
+      const { data, error } = await supabase
+        .from('workouts')
+        .select('*')
+        .order('name', { ascending: true });
+      return { data: data || [], error };
+    } catch (error) {
+      console.error('Error in getAllWorkouts:', error);
+      return { data: [], error: error as any };
+    }
+  },
+
+  getWorkoutById: async (workoutId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('workouts')
+        .select('*')
+        .eq('id', workoutId)
+        .single();
+      return { data, error };
+    } catch (error) {
+      console.error('Error in getWorkoutById:', error);
+      return { data: null, error: error as any };
+    }
+  },
+
+  createWorkout: async (workoutData: Omit<Workout, 'id' | 'created_at' | 'updated_at'>) => {
+    try {
+      const { data, error } = await supabase
+        .from('workouts')
+        .insert([{
+          ...workoutData,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }])
+        .select()
+        .single();
+      return { data, error };
+    } catch (error) {
+      console.error('Error in createWorkout:', error);
+      return { data: null, error: error as any };
+    }
+  },
+
+  updateWorkout: async (workoutId: string, workoutData: Partial<Workout>) => {
+    try {
+      const { data, error } = await supabase
+        .from('workouts')
+        .update({
+          ...workoutData,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', workoutId)
+        .select()
+        .single();
+      return { data, error };
+    } catch (error) {
+      console.error('Error in updateWorkout:', error);
+      return { data: null, error: error as any };
+    }
+  },
+
+  deleteWorkout: async (workoutId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('workouts')
+        .delete()
+        .eq('id', workoutId);
+      return { data, error };
+    } catch (error) {
+      console.error('Error in deleteWorkout:', error);
+      return { data: null, error: error as any };
     }
   },
 
