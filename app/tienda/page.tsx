@@ -230,7 +230,7 @@ export default function TiendaPage() {
                           ${supplement.price.toLocaleString()}
                         </p>
                         <p className="text-xs text-gray-500">
-                          Stock: {supplement.stock}
+                          Disponible
                         </p>
                       </div>
                     </div>
@@ -253,10 +253,10 @@ export default function TiendaPage() {
                     <div className="flex space-x-2">
                       <button
                         onClick={() => handlePurchase(supplement.id)}
-                        disabled={supplement.stock === 0}
+                        disabled={false}
                         className="flex-1 py-2 bg-emerald-600 text-white rounded-md text-sm hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors !rounded-button"
                       >
-                        {supplement.stock === 0 ? 'Agotado' : 'Comprar'}
+                        Comprar
                       </button>
                       <button className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md text-sm hover:bg-gray-200 transition-colors !rounded-button">
                         <i className="ri-information-line"></i>
