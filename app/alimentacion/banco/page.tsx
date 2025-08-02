@@ -26,7 +26,7 @@ export default function BancoPage() {
       } else {
         console.log('🔄 Cargando banco de alimentos inicial...');
         // Cargar alimentos iniciales - LÍNEA CORREGIDA
-        await loadInitialFoods();
+        await dbOperations.loadInitialFoods();
         setIsInitialized(true);
       }
     } catch (error) {

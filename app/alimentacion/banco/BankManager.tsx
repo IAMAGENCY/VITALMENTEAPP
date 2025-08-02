@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -7,6 +6,16 @@ import { dbOperations, Food } from '../../../lib/supabase';
 interface BankManagerProps {
   onSelectFood?: (food: Food, portion: number) => void;
   showAddFood?: boolean;
+}
+
+interface NewFoodForm {
+  name: string;
+  category: string;
+  calories_per_100g: number;
+  protein_per_100g: number;
+  carbs_per_100g: number;
+  fat_per_100g: number;
+  fiber_per_100g: number;
 }
 
 export default function BankManager({ onSelectFood, showAddFood = true }: BankManagerProps) {
@@ -18,19 +27,15 @@ export default function BankManager({ onSelectFood, showAddFood = true }: BankMa
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [selectedFood, setSelectedFood] = useState<Food | null>(null);
   const [portion, setPortion] = useState(100);
-
-  const foodData = {
-  nombre: formData.name,                           // Campo español requerido
-  name: formData.name,                             // Campo inglés requerido  
-  categoria: formData.category,                    // Cambiar 'category' por 'categoria'
-  calorias_por_100g: formData.calories_per_100g,  // Cambiar nombre de campo
-  proteinas_por_100g: formData.protein_per_100g,  // Cambiar nombre de campo
-  carbohidratos_por_100g: formData.carbs_per_100g, // Cambiar nombre de campo
-  grasas_por_100g: formData.fat_per_100g,         // Cambiar nombre de campo
-  fibra_por_100g: formData.fiber_per_100g || 0,   // Cambiar nombre de campo + default
-  azucares_por_100g: 0,                           // Campo requerido faltante
-  sodio_por_100g: 0                               // Campo requerido faltante
-};
+  const [newFood, setNewFood] = useState<NewFoodForm>({
+    name: '',
+    category: 'Frutas',
+    calories_per_100g: 0,
+    protein_per_100g: 0,
+    carbs_per_100g: 0,
+    fat_per_100g: 0,
+    fiber_per_100g: 0
+  });
 
   const categories = [
     'Frutas', 'Verduras', 'Proteínas', 'Carbohidratos', 
@@ -72,6 +77,7 @@ export default function BankManager({ onSelectFood, showAddFood = true }: BankMa
 
     if (searchTerm.trim()) {
       filtered = filtered.filter(food => 
+        food.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
         food.name.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
@@ -87,8 +93,16 @@ export default function BankManager({ onSelectFood, showAddFood = true }: BankMa
 
     try {
       const foodData = {
-        ...newFood,
-        is_custom: true
+        nombre: newFood.name,
+        name: newFood.name,
+        categoria: newFood.category,
+        calorias_por_100g: newFood.calories_per_100g,
+        proteinas_por_100g: newFood.protein_per_100g,
+        carbohidratos_por_100g: newFood.carbs_per_100g,
+        grasas_por_100g: newFood.fat_per_100g,
+        fibra_por_100g: newFood.fiber_per_100g || 0,
+        azucares_por_100g: 0,
+        sodio_por_100g: 0
       };
 
       const { data, error } = await dbOperations.createFood(foodData);
@@ -113,6 +127,7 @@ export default function BankManager({ onSelectFood, showAddFood = true }: BankMa
         fiber_per_100g: 0
       });
       setShowCreateForm(false);
+      alert('Alimento creado exitosamente');
     } catch (error) {
       console.error('Error creating food:', error);
       alert('Error al crear el alimento');
@@ -126,11 +141,11 @@ export default function BankManager({ onSelectFood, showAddFood = true }: BankMa
   const calculateNutrition = (food: Food, grams: number) => {
     const factor = grams / 100;
     return {
-      calories: Math.round(food.calories_per_100g * factor),
-      protein: Math.round(food.protein_per_100g * factor * 10) / 10,
-      carbs: Math.round(food.carbs_per_100g * factor * 10) / 10,
-      fat: Math.round(food.fat_per_100g * factor * 10) / 10,
-      fiber: Math.round((food.fiber_per_100g || 0) * factor * 10) / 10
+      calories: Math.round(food.calorias_por_100g * factor),
+      protein: Math.round(food.proteinas_por_100g * factor * 10) / 10,
+      carbs: Math.round(food.carbohidratos_por_100g * factor * 10) / 10,
+      fat: Math.round(food.grasas_por_100g * factor * 10) / 10,
+      fiber: Math.round((food.fibra_por_100g || 0) * factor * 10) / 10
     };
   };
 
@@ -238,26 +253,21 @@ export default function BankManager({ onSelectFood, showAddFood = true }: BankMa
 
                             <div>
                               <div className="flex items-center space-x-2">
-                                <h4 className="font-medium text-gray-900">{food.name}</h4>
-                                {food.is_custom && (
-                                  <span className="px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded-full">
-                                    Personalizado
-                                  </span>
-                                )}
+                                <h4 className="font-medium text-gray-900">{food.nombre}</h4>
                               </div>
-                              <p className="text-sm text-gray-600">{food.category}</p>
+                              <p className="text-sm text-gray-600">{food.categoria}</p>
                               <div className="flex items-center space-x-4 mt-1">
                                 <span className="text-xs text-gray-500">
-                                  {food.calories_per_100g} cal/100g
+                                  {food.calorias_por_100g} cal/100g
                                 </span>
                                 <span className="text-xs text-gray-500">
-                                  P: {food.protein_per_100g}g
+                                  P: {food.proteinas_por_100g}g
                                 </span>
                                 <span className="text-xs text-gray-500">
-                                  C: {food.carbs_per_100g}g
+                                  C: {food.carbohidratos_por_100g}g
                                 </span>
                                 <span className="text-xs text-gray-500">
-                                  G: {food.fat_per_100g}g
+                                  G: {food.grasas_por_100g}g
                                 </span>
                               </div>
                             </div>
@@ -405,7 +415,7 @@ export default function BankManager({ onSelectFood, showAddFood = true }: BankMa
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold">{selectedFood.name}</h3>
+              <h3 className="text-lg font-semibold">{selectedFood.nombre}</h3>
               <button
                 onClick={() => setSelectedFood(null)}
                 className="w-6 h-6 flex items-center justify-center"
