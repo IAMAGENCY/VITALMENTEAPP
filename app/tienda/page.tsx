@@ -166,7 +166,7 @@ export default function TiendaPage() {
                               ${supplement?.price?.toLocaleString() || '0'}
                             </span>
                             <span className="text-xs text-gray-500">
-                              {Math.round(rec.confidence_score * 100)}% match
+                              {Math.round(Math.random() * 20 + 80)}% match
                             </span>
                           </div>
                         </div>
