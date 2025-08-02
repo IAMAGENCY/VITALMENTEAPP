@@ -89,6 +89,16 @@ export interface UserMeal {
   created_at?: string;
 }
 
+export interface WaterIntake {
+  id?: string;
+  user_id: string;
+  amount: number;
+  date: string;
+  total_amount?: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
 // ========================= DATABASE OPERATIONS =========================
 
 export const dbOperations = {
@@ -382,6 +392,99 @@ export const dbOperations = {
     } catch (error) {
       console.error('Error in getUnviewedInsights:', error);
       return { data: [], error: error as any };
+    }
+  },
+
+  // ========== WATER INTAKE ==========
+  getWaterIntake: async (userId: string, date: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('water_intake')
+        .select('*, total_amount')
+        .eq('user_id', userId)
+        .eq('date', date)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching water intake:', error);
+        return { data: null, error };
+      }
+
+      return { data: data || [], error: null };
+    } catch (error) {
+      console.error('Exception in getWaterIntake:', error);
+      return { data: [], error: error as any };
+    }
+  },
+
+  createWaterIntake: async (userId: string, amount: number, date: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('water_intake')
+        .insert([{
+          user_id: userId,
+          amount: amount,
+          date: date,
+          created_at: new Date().toISOString()
+        }])
+        .select()
+        .single();
+      return { data, error };
+    } catch (error) {
+      console.error('Error in createWaterIntake:', error);
+      return { data: null, error: error as any };
+    }
+  },
+
+  updateWaterIntake: async (intakeId: string, amount: number) => {
+    try {
+      const { data, error } = await supabase
+        .from('water_intake')
+        .update({ 
+          amount: amount,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', intakeId)
+        .select()
+        .single();
+      return { data, error };
+    } catch (error) {
+      console.error('Error in updateWaterIntake:', error);
+      return { data: null, error: error as any };
+    }
+  },
+
+  deleteWaterIntake: async (intakeId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('water_intake')
+        .delete()
+        .eq('id', intakeId);
+      return { data, error };
+    } catch (error) {
+      console.error('Error in deleteWaterIntake:', error);
+      return { data: null, error: error as any };
+    }
+  },
+
+  getDailyWaterTotal: async (userId: string, date: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('water_intake')
+        .select('amount')
+        .eq('user_id', userId)
+        .eq('date', date);
+
+      if (error) {
+        console.error('Error getting daily water total:', error);
+        return { total: 0, error };
+      }
+
+      const total = data?.reduce((sum, intake) => sum + (intake.amount || 0), 0) || 0;
+      return { total, error: null };
+    } catch (error) {
+      console.error('Exception in getDailyWaterTotal:', error);
+      return { total: 0, error: error as any };
     }
   }
 };
