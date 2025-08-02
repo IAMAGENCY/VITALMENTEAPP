@@ -149,6 +149,52 @@ export const dbOperations = {
     }
   },
 
+  loadInitialFoods: async () => {
+    try {
+      const { data, error } = await supabase
+        .from('foods')
+        .select('*')
+        .order('nombre')
+        .limit(100);
+
+      return { data, error };
+    } catch (error) {
+      console.error('Error loading initial foods:', error);
+      return { data: null, error };
+    }
+  },
+
+  searchFoods: async (searchTerm: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('foods')
+        .select('*')
+        .or(`nombre.ilike.%${searchTerm}%,name.ilike.%${searchTerm}%`)
+        .order('nombre')
+        .limit(50);
+
+      return { data, error };
+    } catch (error) {
+      console.error('Error searching foods:', error);
+      return { data: null, error };
+    }
+  },
+
+  getFoodsByCategory: async (categoria: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('foods')
+        .select('*')
+        .eq('categoria', categoria)
+        .order('nombre');
+
+      return { data, error };
+    } catch (error) {
+      console.error('Error getting foods by category:', error);
+      return { data: null, error };
+    }
+  },
+
   markInsightAsViewed: async (insightId: string) => {
     const { data, error } = await supabase
       .from('user_insights')
@@ -250,27 +296,3 @@ export const initializeDatabase = async () => {
     return { success: false, error };
   }
 };
-
-// 1. AGREGAR esta función al final del objeto dbOperations en lib/supabase.ts:
-
-loadInitialFoods: async () => {
-  try {
-    const { data, error } = await supabase
-      .from('foods')
-      .select('*')
-      .order('nombre')
-      .limit(100); // Limitar para rendimiento inicial
-
-    return { data, error };
-  } catch (error) {
-    console.error('Error loading initial foods:', error);
-    return { data: null, error };
-  }
-},
-
-// 2. CORREGIR en app/alimentacion/banco/BankManager.tsx línea 67:
-// CAMBIAR:
-filtered = filtered.filter(food => food.category === selectedCategory);
-
-// POR:
-filtered = filtered.filter(food => food.categoria === selectedCategory);

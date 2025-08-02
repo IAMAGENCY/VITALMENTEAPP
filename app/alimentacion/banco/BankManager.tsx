@@ -19,15 +19,18 @@ export default function BankManager({ onSelectFood, showAddFood = true }: BankMa
   const [selectedFood, setSelectedFood] = useState<Food | null>(null);
   const [portion, setPortion] = useState(100);
 
-  const [newFood, setNewFood] = useState({
-    name: '',
-    category: 'Frutas',
-    calories_per_100g: 0,
-    protein_per_100g: 0,
-    carbs_per_100g: 0,
-    fat_per_100g: 0,
-    fiber_per_100g: 0
-  });
+  const foodData = {
+  nombre: formData.name,                           // Campo español requerido
+  name: formData.name,                             // Campo inglés requerido  
+  categoria: formData.category,                    // Cambiar 'category' por 'categoria'
+  calorias_por_100g: formData.calories_per_100g,  // Cambiar nombre de campo
+  proteinas_por_100g: formData.protein_per_100g,  // Cambiar nombre de campo
+  carbohidratos_por_100g: formData.carbs_per_100g, // Cambiar nombre de campo
+  grasas_por_100g: formData.fat_per_100g,         // Cambiar nombre de campo
+  fibra_por_100g: formData.fiber_per_100g || 0,   // Cambiar nombre de campo + default
+  azucares_por_100g: 0,                           // Campo requerido faltante
+  sodio_por_100g: 0                               // Campo requerido faltante
+};
 
   const categories = [
     'Frutas', 'Verduras', 'Proteínas', 'Carbohidratos', 
