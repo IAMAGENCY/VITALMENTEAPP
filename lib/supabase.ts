@@ -148,6 +148,26 @@ export const dbOperations = {
     }
   },
 
+getUserByEmail: async (email: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('usuarios')
+      .select('*')
+      .eq('email', email.toLowerCase().trim())
+      .single();
+    
+    if (error) {
+      console.error('Error in getUserByEmail:', error);
+      return { data: null, error };
+    }
+
+    return { data, error: null };
+  } catch (error) {
+    console.error('Exception in getUserByEmail:', error);
+    return { data: null, error: error as any };
+  }
+},
+
   updateUserSubscription: async (userId: string, subscriptionData: any) => {
     try {
       const { data, error } = await supabase
