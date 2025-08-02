@@ -206,25 +206,25 @@ export const dbOperations = {
     }
   },
 
-getUserByEmail: async (email: string) => {
-  try {
-    const { data, error } = await supabase
-      .from('usuarios')
-      .select('*')
-      .eq('email', email.toLowerCase().trim())
-      .single();
-    
-    if (error) {
-      console.error('Error in getUserByEmail:', error);
-      return { data: null, error };
-    }
+  getUserByEmail: async (email: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('usuarios')
+        .select('*')
+        .eq('email', email.toLowerCase().trim())
+        .single();
+      
+      if (error) {
+        console.error('Error in getUserByEmail:', error);
+        return { data: null, error };
+      }
 
-    return { data, error: null };
-  } catch (error) {
-    console.error('Exception in getUserByEmail:', error);
-    return { data: null, error: error as any };
-  }
-},
+      return { data, error: null };
+    } catch (error) {
+      console.error('Exception in getUserByEmail:', error);
+      return { data: null, error: error as any };
+    }
+  },
 
   updateUserSubscription: async (userId: string, subscriptionData: any) => {
     try {
@@ -357,6 +357,48 @@ getUserByEmail: async (email: string) => {
     }
   },
 
+  getFoodById: async (foodId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('foods')
+        .select('*')
+        .eq('id', foodId)
+        .single();
+      return { data, error };
+    } catch (error) {
+      console.error('Error in getFoodById:', error);
+      return { data: null, error: error as any };
+    }
+  },
+
+  updateFood: async (foodId: string, foodData: Partial<Food>) => {
+    try {
+      const { data, error } = await supabase
+        .from('foods')
+        .update(foodData)
+        .eq('id', foodId)
+        .select()
+        .single();
+      return { data, error };
+    } catch (error) {
+      console.error('Error in updateFood:', error);
+      return { data: null, error: error as any };
+    }
+  },
+
+  deleteFood: async (foodId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('foods')
+        .delete()
+        .eq('id', foodId);
+      return { data, error };
+    } catch (error) {
+      console.error('Error in deleteFood:', error);
+      return { data: null, error: error as any };
+    }
+  },
+
   // ========== SUPPLEMENTS ==========
   getAllSupplements: async () => {
     try {
@@ -371,7 +413,6 @@ getUserByEmail: async (email: string) => {
     }
   },
 
-  // Obtener suplemento por ID
   getSupplementById: async (id: string) => {
     try {
       const { data, error } = await supabase
@@ -379,14 +420,12 @@ getUserByEmail: async (email: string) => {
         .select('*')
         .eq('id', id)
         .single();
-      
       return { data, error };
     } catch (error) {
       return { data: null, error };
     }
   },
 
-  // Crear nuevo suplemento
   createSupplement: async (supplementData: Omit<Supplement, 'id' | 'created_at' | 'updated_at'>) => {
     try {
       const { data, error } = await supabase
@@ -394,14 +433,12 @@ getUserByEmail: async (email: string) => {
         .insert([supplementData])
         .select()
         .single();
-      
       return { data, error };
     } catch (error) {
       return { data: null, error };
     }
   },
 
-  // Obtener recomendaciones de suplementos para un usuario
   getUserSupplementRecommendations: async (userId: string) => {
     try {
       const { data, error } = await supabase
@@ -410,14 +447,12 @@ getUserByEmail: async (email: string) => {
         .eq('user_id', userId)
         .eq('is_active', true)
         .order('priority', { ascending: false });
-      
       return { data, error };
     } catch (error) {
       return { data: null, error };
     }
   },
 
-  // Crear recomendación de suplemento
   createSupplementRecommendation: async (recommendationData: Omit<SupplementRecommendation, 'id' | 'created_at' | 'updated_at'>) => {
     try {
       const { data, error } = await supabase
@@ -425,7 +460,6 @@ getUserByEmail: async (email: string) => {
         .insert([recommendationData])
         .select()
         .single();
-      
       return { data, error };
     } catch (error) {
       return { data: null, error };
@@ -562,6 +596,71 @@ getUserByEmail: async (email: string) => {
     }
   },
 
+  getUserMealsByDate: async (userId: string, date: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('user_meals')
+        .select(`
+          *,
+          foods (
+            id,
+            nombre,
+            name,
+            calorias_por_100g,
+            proteinas_por_100g,
+            carbohidratos_por_100g,
+            grasas_por_100g,
+            fibra_por_100g,
+            azucares_por_100g,
+            sodio_por_100g,
+            categoria,
+            subcategoria
+          )
+        `)
+        .eq('user_id', userId)
+        .eq('date', date)
+        .order('created_at', { ascending: false });
+
+      return { data: data || [], error };
+    } catch (error) {
+      console.error('Error in getUserMealsByDate:', error);
+      return { data: [], error: error as any };
+    }
+  },
+
+  getUserMealsByDateAndType: async (userId: string, date: string, mealType: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('user_meals')
+        .select(`
+          *,
+          foods (
+            id,
+            nombre,
+            name,
+            calorias_por_100g,
+            proteinas_por_100g,
+            carbohidratos_por_100g,
+            grasas_por_100g,
+            fibra_por_100g,
+            azucares_por_100g,
+            sodio_por_100g,
+            categoria,
+            subcategoria
+          )
+        `)
+        .eq('user_id', userId)
+        .eq('date', date)
+        .eq('tipo_comida', mealType)
+        .order('created_at', { ascending: false });
+
+      return { data: data || [], error };
+    } catch (error) {
+      console.error('Error in getUserMealsByDateAndType:', error);
+      return { data: [], error: error as any };
+    }
+  },
+
   createUserMeal: async (mealData: Omit<UserMeal, 'id' | 'created_at' | 'updated_at'>) => {
     try {
       const { data, error } = await supabase
@@ -576,6 +675,37 @@ getUserByEmail: async (email: string) => {
       return { data, error };
     } catch (error) {
       console.error('Error in createUserMeal:', error);
+      return { data: null, error: error as any };
+    }
+  },
+
+  updateUserMeal: async (mealId: string, mealData: Partial<UserMeal>) => {
+    try {
+      const { data, error } = await supabase
+        .from('user_meals')
+        .update({
+          ...mealData,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', mealId)
+        .select()
+        .single();
+      return { data, error };
+    } catch (error) {
+      console.error('Error in updateUserMeal:', error);
+      return { data: null, error: error as any };
+    }
+  },
+
+  deleteUserMeal: async (mealId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('user_meals')
+        .delete()
+        .eq('id', mealId);
+      return { data, error };
+    } catch (error) {
+      console.error('Error in deleteUserMeal:', error);
       return { data: null, error: error as any };
     }
   },
@@ -695,7 +825,6 @@ getUserByEmail: async (email: string) => {
     }
   },
 
-  // ========== FUNCIONES DE AGUA ADICIONALES ==========
   addWaterIntake: async (waterData: { user_id: string; amount_ml: number; date: string }) => {
     try {
       const { data, error } = await supabase
@@ -813,83 +942,69 @@ getUserByEmail: async (email: string) => {
       console.error('Exception in getDailyWaterTotal:', error);
       return { total: 0, error: error as any };
     }
-  },
+  }
+};
 
-  // ========== DELETE FUNCTIONS (FUNCIONES FALTANTES) ==========
-  deleteUserMeal: async (mealId: string) => {
+// ========================= SUBSCRIPTION OPERATIONS =========================
+
+export const subscriptionOperations = {
+  getUserSubscription: async (userId: string) => {
     try {
       const { data, error } = await supabase
-        .from('user_meals')
-        .delete()
-        .eq('id', mealId);
+        .from('usuarios')
+        .select('subscription_status, subscription_end_date')
+        .eq('id', userId)
+        .single();
       return { data, error };
     } catch (error) {
-      console.error('Error in deleteUserMeal:', error);
+      console.error('Error in getUserSubscription:', error);
       return { data: null, error: error as any };
     }
   },
 
-  updateUserMeal: async (mealId: string, mealData: Partial<UserMeal>) => {
+  updateSubscription: async (userId: string, subscriptionStatus: string, endDate?: string) => {
     try {
       const { data, error } = await supabase
-        .from('user_meals')
+        .from('usuarios')
         .update({
-          ...mealData,
+          subscription_status: subscriptionStatus,
+          subscription_end_date: endDate,
           updated_at: new Date().toISOString()
         })
-        .eq('id', mealId)
+        .eq('id', userId)
         .select()
         .single();
       return { data, error };
     } catch (error) {
-      console.error('Error in updateUserMeal:', error);
+      console.error('Error in updateSubscription:', error);
       return { data: null, error: error as any };
     }
   },
 
-  deleteFood: async (foodId: string) => {
+  cancelSubscription: async (userId: string) => {
     try {
       const { data, error } = await supabase
-        .from('foods')
-        .delete()
-        .eq('id', foodId);
-      return { data, error };
-    } catch (error) {
-      console.error('Error in deleteFood:', error);
-      return { data: null, error: error as any };
-    }
-  },
-
-  updateFood: async (foodId: string, foodData: Partial<Food>) => {
-    try {
-      const { data, error } = await supabase
-        .from('foods')
-        .update(foodData)
-        .eq('id', foodId)
+        .from('usuarios')
+        .update({
+          subscription_status: 'free',
+          subscription_end_date: null,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', userId)
         .select()
         .single();
       return { data, error };
     } catch (error) {
-      console.error('Error in updateFood:', error);
+      console.error('Error in cancelSubscription:', error);
       return { data: null, error: error as any };
     }
-  },
+  }
+};
 
-  getFoodById: async (foodId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('foods')
-        .select('*')
-        .eq('id', foodId)
-        .single();
-      return { data, error };
-    } catch (error) {
-      console.error('Error in getFoodById:', error);
-      return { data: null, error: error as any };
-    }
-  },
+// ========================= ALIMENTACION OPERATIONS =========================
 
-  getUserMealsByDate: async (userId: string, date: string) => {
+export const alimentacionOperations = {
+  getRecentMeals: async (userId: string, limit: number = 10) => {
     try {
       const { data, error } = await supabase
         .from('user_meals')
@@ -903,49 +1018,107 @@ getUserByEmail: async (email: string) => {
             proteinas_por_100g,
             carbohidratos_por_100g,
             grasas_por_100g,
-            fibra_por_100g,
-            azucares_por_100g,
-            sodio_por_100g,
-            categoria,
-            subcategoria
+            categoria
           )
         `)
         .eq('user_id', userId)
-        .eq('date', date)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(limit);
 
       return { data: data || [], error };
     } catch (error) {
-      console.error('Error in getUserMealsByDate:', error);
+      console.error('Error in getRecentMeals:', error);
       return { data: [], error: error as any };
     }
   },
 
-  getUserMealsByDateAndType: async (userId: string, date: string, mealType: string) => {
+  getNutritionSummary: async (userId: string, date: string) => {
     try {
       const { data, error } = await supabase
         .from('user_meals')
         .select(`
-          *,
+          portion_grams,
           foods (
-            id,
-            nombre,
-            name,
             calorias_por_100g,
             proteinas_por_100g,
             carbohidratos_por_100g,
-            grasas_por_100g,
-            fibra_por_100g,
-            azucares_por_100g,
-            sodio_por_100g,
-            categoria,
-            subcategoria
+            grasas_por_100g
           )
         `)
         .eq('user_id', userId)
-        .eq('date', date)
-        .eq('tipo_comida', mealType)
-        .order('created_at', { ascending: false });
+        .eq('date', date);
 
-      return { data: data || [], error };
-    } catch
+      if (error) {
+        console.error('Error getting nutrition summary:', error);
+        return { data: null, error };
+      }
+
+      // Calcular totales
+      let totalCalorias = 0;
+      let totalProteinas = 0;
+      let totalCarbohidratos = 0;
+      let totalGrasas = 0;
+
+      data?.forEach((meal: any) => {
+        const multiplier = meal.portion_grams / 100;
+        totalCalorias += (meal.foods?.calorias_por_100g || 0) * multiplier;
+        totalProteinas += (meal.foods?.proteinas_por_100g || 0) * multiplier;
+        totalCarbohidratos += (meal.foods?.carbohidratos_por_100g || 0) * multiplier;
+        totalGrasas += (meal.foods?.grasas_por_100g || 0) * multiplier;
+      });
+
+      return {
+        data: {
+          calorias: Math.round(totalCalorias),
+          proteinas: Math.round(totalProteinas * 10) / 10,
+          carbohidratos: Math.round(totalCarbohidratos * 10) / 10,
+          grasas: Math.round(totalGrasas * 10) / 10
+        },
+        error: null
+      };
+    } catch (error) {
+      console.error('Exception in getNutritionSummary:', error);
+      return { data: null, error: error as any };
+    }
+  },
+
+  getMealsByType: async (userId: string, date: string, tipoComida: string) => {
+    return dbOperations.getUserMealsByDateAndType(userId, date, tipoComida);
+  }
+};
+
+// ========================= UTILITY FUNCTIONS =========================
+
+export const initializeDatabase = async () => {
+  try {
+    console.log('🔧 Initializing database connection...');
+    
+    // Test connection
+    const { data, error } = await supabase
+      .from('usuarios')
+      .select('id')
+      .limit(1);
+
+    if (error) {
+      console.error('❌ Database initialization failed:', error);
+      return { success: false, error };
+    }
+
+    console.log('✅ Database connection successful');
+    return { success: true, data };
+  } catch (error) {
+    console.error('❌ Database initialization exception:', error);
+    return { success: false, error };
+  }
+};
+
+// ========================= EXPORTS =========================
+
+export default supabase;
+
+// Re-export everything for convenience
+export {
+  dbOperations as db,
+  subscriptionOperations as subscriptions,
+  alimentacionOperations as alimentacion
+};
