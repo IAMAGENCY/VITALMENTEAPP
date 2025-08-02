@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -20,6 +19,8 @@ export default function FoodBankManager() {
     carbs_per_100g: '',
     fat_per_100g: '',
     fiber_per_100g: '',
+    sugar_per_100g: '',
+    sodium_per_100g: '',
     image_url: '',
     is_custom: false
   });
@@ -35,8 +36,8 @@ export default function FoodBankManager() {
   const loadFoods = async () => {
     setLoading(true);
     try {
-      // Mock data - en producción se conectaría a Supabase
-      const mockFoods = [
+      // Mock data completamente compatible con Food type
+      const mockFoods: Food[] = [
         {
           id: '1',
           name: 'Manzana',
@@ -46,8 +47,8 @@ export default function FoodBankManager() {
           carbs_per_100g: 14.0,
           fat_per_100g: 0.2,
           fiber_per_100g: 2.4,
-          sugar_per_100g: 0,        
-          sodium_per_100g: 74,      
+          sugar_per_100g: 10.4,
+          sodium_per_100g: 1,
           image_url: '',
           is_custom: false,
           created_at: new Date().toISOString()
@@ -61,6 +62,8 @@ export default function FoodBankManager() {
           carbs_per_100g: 0.0,
           fat_per_100g: 3.6,
           fiber_per_100g: 0.0,
+          sugar_per_100g: 0.0,
+          sodium_per_100g: 74,
           image_url: '',
           is_custom: false,
           created_at: new Date().toISOString()
@@ -74,6 +77,38 @@ export default function FoodBankManager() {
           carbs_per_100g: 23.0,
           fat_per_100g: 0.9,
           fiber_per_100g: 1.8,
+          sugar_per_100g: 0.4,
+          sodium_per_100g: 5,
+          image_url: '',
+          is_custom: false,
+          created_at: new Date().toISOString()
+        },
+        {
+          id: '4',
+          name: 'Brócoli',
+          category: 'Verduras',
+          calories_per_100g: 34,
+          protein_per_100g: 2.8,
+          carbs_per_100g: 7.0,
+          fat_per_100g: 0.4,
+          fiber_per_100g: 2.6,
+          sugar_per_100g: 1.5,
+          sodium_per_100g: 33,
+          image_url: '',
+          is_custom: false,
+          created_at: new Date().toISOString()
+        },
+        {
+          id: '5',
+          name: 'Aguacate',
+          category: 'Grasas',
+          calories_per_100g: 160,
+          protein_per_100g: 2.0,
+          carbs_per_100g: 9.0,
+          fat_per_100g: 15.0,
+          fiber_per_100g: 7.0,
+          sugar_per_100g: 0.7,
+          sodium_per_100g: 7,
           image_url: '',
           is_custom: false,
           created_at: new Date().toISOString()
@@ -99,6 +134,8 @@ export default function FoodBankManager() {
       carbs_per_100g: parseFloat(formData.carbs_per_100g),
       fat_per_100g: parseFloat(formData.fat_per_100g),
       fiber_per_100g: parseFloat(formData.fiber_per_100g) || 0,
+      sugar_per_100g: parseFloat(formData.sugar_per_100g) || 0,
+      sodium_per_100g: parseFloat(formData.sodium_per_100g) || 0,
       image_url: formData.image_url,
       is_custom: formData.is_custom || false
     };
@@ -133,6 +170,8 @@ export default function FoodBankManager() {
       carbs_per_100g: food.carbs_per_100g.toString(),
       fat_per_100g: food.fat_per_100g.toString(),
       fiber_per_100g: food.fiber_per_100g?.toString() || '0',
+      sugar_per_100g: food.sugar_per_100g?.toString() || '0',
+      sodium_per_100g: food.sodium_per_100g?.toString() || '0',
       image_url: food.image_url || '',
       is_custom: food.is_custom || false
     });
@@ -159,6 +198,8 @@ export default function FoodBankManager() {
       carbs_per_100g: '',
       fat_per_100g: '',
       fiber_per_100g: '',
+      sugar_per_100g: '',
+      sodium_per_100g: '',
       image_url: '',
       is_custom: false
     });
@@ -174,7 +215,7 @@ export default function FoodBankManager() {
 
   const exportFoods = () => {
     const csvContent = [
-      ['Nombre', 'Categoría', 'Calorías/100g', 'Proteína/100g', 'Carbos/100g', 'Grasas/100g', 'Fibra/100g'],
+      ['Nombre', 'Categoría', 'Calorías/100g', 'Proteína/100g', 'Carbos/100g', 'Grasas/100g', 'Fibra/100g', 'Azúcar/100g', 'Sodio/100g'],
       ...filteredFoods.map(food => [
         food.name,
         food.category,
@@ -182,7 +223,9 @@ export default function FoodBankManager() {
         food.protein_per_100g,
         food.carbs_per_100g,
         food.fat_per_100g,
-        food.fiber_per_100g || 0
+        food.fiber_per_100g || 0,
+        food.sugar_per_100g || 0,
+        food.sodium_per_100g || 0
       ])
     ].map(row => row.join(',')).join('\n');
 
@@ -366,6 +409,30 @@ export default function FoodBankManager() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Micronutrientes por 100g
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    type="number"
+                    step="0.1"
+                    placeholder="Azúcar (g)"
+                    value={formData.sugar_per_100g}
+                    onChange={(e) => setFormData({...formData, sugar_per_100g: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                  />
+                  <input
+                    type="number"
+                    step="0.1"
+                    placeholder="Sodio (mg)"
+                    value={formData.sodium_per_100g}
+                    onChange={(e) => setFormData({...formData, sodium_per_100g: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   URL de Imagen (opcional)
                 </label>
                 <input
@@ -438,6 +505,8 @@ export default function FoodBankManager() {
                         <span>C: {food.carbs_per_100g}g</span>
                         <span>G: {food.fat_per_100g}g</span>
                         {food.fiber_per_100g && <span>F: {food.fiber_per_100g}g</span>}
+                        {food.sugar_per_100g && <span>Az: {food.sugar_per_100g}g</span>}
+                        {food.sodium_per_100g && <span>Na: {food.sodium_per_100g}mg</span>}
                       </div>
                     </div>
                   </div>
