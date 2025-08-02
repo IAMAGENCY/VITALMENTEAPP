@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -20,7 +19,7 @@ export default function RegistroPage() {
     altura: '',
     genero: 'masculino' as 'masculino' | 'femenino',
     actividad: 'sedentario',
-    objetivo: 'mantener',
+    objetivo: 'mantener_peso', // CORREGIDO: Usar valor correcto desde el inicio
     experiencia: 'principiante',
     condiciones: [] as string[],
     preferencias: [] as string[]
@@ -94,22 +93,21 @@ export default function RegistroPage() {
         throw new Error('No se puede conectar a Supabase');
       }
 
-      // Preparar datos para Supabase - SIN updated_at
+      // Preparar datos para Supabase - CORREGIDO: objetivo ya viene con el valor correcto
       const userData = {
-        nombre: formData.nombre.trim(),
-        email: formData.email.trim().toLowerCase(),
-        edad: parseInt(formData.edad),
-        peso: parseFloat(formData.peso),
-        altura: parseInt(formData.altura),
-        genero: formData.genero,
-        actividad: formData.actividad,
-        objetivo: formData.objetivo,
-        experiencia: formData.experiencia, 
-        condiciones: formData.condiciones || [], 
-        preferencias: formData.preferencias || [], 
-        subscription_status: 'free' as 'free' | 'premium'
-      };
-
+         nombre: formData.nombre.trim(),
+         email: formData.email.trim().toLowerCase(),
+         edad: parseInt(formData.edad),
+         peso: parseFloat(formData.peso),
+         altura: parseInt(formData.altura),
+         genero: formData.genero as 'masculino' | 'femenino' | 'otro',
+         nivel_actividad: formData.actividad as 'sedentario' | 'ligero' | 'moderado' | 'activo' | 'muy_activo',
+         objetivo: formData.objetivo as 'perder_peso' | 'mantener_peso' | 'ganar_peso' | 'ganar_musculo',
+         experiencia: formData.experiencia,
+         condiciones: formData.condiciones || [],
+         preferencias: formData.preferencias || [],
+         subscription_status: 'free' as 'free' | 'premium' | 'pro'
+       };
       console.log('🔍 Datos a enviar a Supabase:', userData);
 
       // Verificar si el usuario ya existe por email
@@ -396,11 +394,11 @@ export default function RegistroPage() {
                     onChange={handleInputChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
                   >
-                    <option value="perder">Perder peso</option>
-                    <option value="mantener">Mantener peso</option>
-                    <option value="ganar">Ganar músculo</option>
-                    <option value="definir">Definir cuerpo</option>
-                    <option value="salud">Mejorar salud general</option>
+                    {/* CORREGIDO: Usar los valores exactos que espera la base de datos */}
+                    <option value="perder_peso">Perder peso</option>
+                    <option value="mantener_peso">Mantener peso</option>
+                    <option value="ganar_peso">Ganar peso</option>
+                    <option value="ganar_musculo">Ganar músculo</option>
                   </select>
                 </div>
 
