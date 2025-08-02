@@ -30,19 +30,30 @@ export interface Usuario {
   updated_at?: string;
 }
 
+// 🔧 CORRIGIENDO INTERFAZ FOOD - Agregando propiedades de lib/types.ts
 export interface Food {
   id?: string;
   nombre: string;
   name: string;
   calorias_por_100g: number;
+  calories_per_100g: number; // ← AGREGADO para compatibilidad
   proteinas_por_100g: number;
+  protein_per_100g: number; // ← AGREGADO para compatibilidad
   carbohidratos_por_100g: number;
+  carbs_per_100g: number; // ← AGREGADO para compatibilidad
   grasas_por_100g: number;
+  fat_per_100g: number; // ← AGREGADO para compatibilidad
   fibra_por_100g?: number;
+  fiber_per_100g?: number; // ← AGREGADO para compatibilidad
   azucares_por_100g?: number;
+  sugar_per_100g?: number; // ← AGREGADO para compatibilidad
   sodio_por_100g?: number;
+  sodium_per_100g?: number; // ← AGREGADO para compatibilidad
   categoria: string;
+  category: string; // ← AGREGADO para compatibilidad
   subcategoria?: string;
+  image_url?: string; // ← AGREGADO para FoodBankManager
+  is_custom?: boolean; // ← AGREGADO para FoodBankManager
   created_at?: string;
 }
 
@@ -58,6 +69,8 @@ export interface Alimento {
   sodio_por_100g?: number;
   categoria: string;
   subcategoria?: string;
+  imagen_url?: string; // ← AGREGADO
+  es_personalizado?: boolean; // ← AGREGADO
   created_at?: string;
 }
 
@@ -83,7 +96,7 @@ export interface UserMeal {
   portion_grams: number;
   date: string;
   created_at: string;
-  updated_at?: string; // ← AGREGADO COMO OPTIONAL
+  updated_at?: string;
 }
 
 export interface WaterIntake {
@@ -120,7 +133,37 @@ export interface Workout {
   updated_at?: string;
 }
 
-// ========================= NUEVAS INTERFACES AGREGADAS =========================
+// 🔧 AGREGANDO INTERFAZ MINDFULNESS RESOURCE FALTANTE
+export interface MindfulnessResource {
+  id: string;
+  title: string;
+  description?: string;
+  type: 'meditation' | 'breathing' | 'relaxation' | 'mindset';
+  content_url: string;
+  duration: number;
+  difficulty: 'principiante' | 'intermedio' | 'avanzado';
+  tags: string[];
+  is_active: boolean;
+  created_at: string;
+  updated_at?: string;
+}
+
+// 🔧 AGREGANDO INTERFAZ WORKOUT LINK FALTANTE
+export interface WorkoutLink {
+  id: string;
+  title: string;
+  description?: string;
+  url: string;
+  platform: 'youtube' | 'spotify';
+  category: string;
+  difficulty: 'principiante' | 'intermedio' | 'avanzado';
+  duration: number;
+  image_url?: string;
+  tags: string[];
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
 
 export interface Supplement {
   id: string;
@@ -294,11 +337,27 @@ export const dbOperations = {
 
   createFood: async (foodData: Omit<Food, 'id' | 'created_at'>) => {
     try {
-      // Mapeo automático español ↔ inglés
+      // Mapeo automático español ↔ inglés con compatibilidad completa
       const mappedData = {
         ...foodData,
         name: foodData.name || foodData.nombre,
         nombre: foodData.nombre || foodData.name,
+        category: foodData.category || foodData.categoria,
+        categoria: foodData.categoria || foodData.category,
+        calories_per_100g: foodData.calories_per_100g || foodData.calorias_por_100g,
+        calorias_por_100g: foodData.calorias_por_100g || foodData.calories_per_100g,
+        protein_per_100g: foodData.protein_per_100g || foodData.proteinas_por_100g,
+        proteinas_por_100g: foodData.proteinas_por_100g || foodData.protein_per_100g,
+        carbs_per_100g: foodData.carbs_per_100g || foodData.carbohidratos_por_100g,
+        carbohidratos_por_100g: foodData.carbohidratos_por_100g || foodData.carbs_per_100g,
+        fat_per_100g: foodData.fat_per_100g || foodData.grasas_por_100g,
+        grasas_por_100g: foodData.grasas_por_100g || foodData.fat_per_100g,
+        fiber_per_100g: foodData.fiber_per_100g || foodData.fibra_por_100g,
+        fibra_por_100g: foodData.fibra_por_100g || foodData.fiber_per_100g,
+        sugar_per_100g: foodData.sugar_per_100g || foodData.azucares_por_100g,
+        azucares_por_100g: foodData.azucares_por_100g || foodData.sugar_per_100g,
+        sodium_per_100g: foodData.sodium_per_100g || foodData.sodio_por_100g,
+        sodio_por_100g: foodData.sodio_por_100g || foodData.sodium_per_100g,
         created_at: new Date().toISOString()
       };
 
@@ -439,6 +498,35 @@ export const dbOperations = {
     }
   },
 
+  updateSupplement: async (id: string, supplementData: Partial<Supplement>) => {
+    try {
+      const { data, error } = await supabase
+        .from('supplements')
+        .update({
+          ...supplementData,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id)
+        .select()
+        .single();
+      return { data, error };
+    } catch (error) {
+      return { data: null, error };
+    }
+  },
+
+  deleteSupplement: async (id: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('supplements')
+        .delete()
+        .eq('id', id);
+      return { data, error };
+    } catch (error) {
+      return { data: null, error };
+    }
+  },
+
   getUserSupplementRecommendations: async (userId: string) => {
     try {
       const { data, error } = await supabase
@@ -466,23 +554,23 @@ export const dbOperations = {
     }
   },
 
-markSupplementAsPurchased: async (recommendationId: string) => {
-  try {
-    const { data, error } = await supabase
-      .from('supplement_recommendations')
-      .update({
-        is_active: false,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', recommendationId)
-      .select()
-      .single();
-    return { data, error };
-  } catch (error) {
-    console.error('Error in markSupplementAsPurchased:', error);
-    return { data: null, error: error as any };
-  }
-},
+  markSupplementAsPurchased: async (recommendationId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('supplement_recommendations')
+        .update({
+          is_active: false,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', recommendationId)
+        .select()
+        .single();
+      return { data, error };
+    } catch (error) {
+      console.error('Error in markSupplementAsPurchased:', error);
+      return { data: null, error: error as any };
+    }
+  },
 
   // ========== WORKOUTS ==========
   getActiveWorkoutsByCategory: async (category: string) => {
@@ -579,6 +667,155 @@ markSupplementAsPurchased: async (recommendationId: string) => {
     } catch (error) {
       console.error('Error in deleteWorkout:', error);
       return { data: null, error: error as any };
+    }
+  },
+
+  // ========== WORKOUT LINKS ==========
+  getAllWorkoutLinks: async () => {
+    try {
+      const { data, error } = await supabase
+        .from('workout_links')
+        .select('*')
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
+      return { data: data || [], error };
+    } catch (error) {
+      console.error('Error in getAllWorkoutLinks:', error);
+      return { data: [], error: error as any };
+    }
+  },
+
+  createWorkoutLink: async (linkData: Omit<WorkoutLink, 'id' | 'created_at' | 'updated_at'>) => {
+    try {
+      const { data, error } = await supabase
+        .from('workout_links')
+        .insert([{
+          ...linkData,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }])
+        .select()
+        .single();
+      return { data, error };
+    } catch (error) {
+      console.error('Error in createWorkoutLink:', error);
+      return { data: null, error: error as any };
+    }
+  },
+
+  updateWorkoutLink: async (id: string, linkData: Partial<WorkoutLink>) => {
+    try {
+      const { data, error } = await supabase
+        .from('workout_links')
+        .update({
+          ...linkData,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id)
+        .select()
+        .single();
+      return { data, error };
+    } catch (error) {
+      console.error('Error in updateWorkoutLink:', error);
+      return { data: null, error: error as any };
+    }
+  },
+
+  deleteWorkoutLink: async (id: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('workout_links')
+        .delete()
+        .eq('id', id);
+      return { data, error };
+    } catch (error) {
+      console.error('Error in deleteWorkoutLink:', error);
+      return { data: null, error: error as any };
+    }
+  },
+
+  // 🔧 MINDFULNESS RESOURCES - FUNCIÓN FALTANTE AGREGADA
+  getAllMindfulnessResources: async () => {
+    try {
+      const { data, error } = await supabase
+        .from('mindfulness_resources')
+        .select('*')
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching mindfulness resources:', error);
+        return [];
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error('Error in getAllMindfulnessResources:', error);
+      return [];
+    }
+  },
+
+  createMindfulnessResource: async (resourceData: Omit<MindfulnessResource, 'id' | 'created_at' | 'updated_at'>) => {
+    try {
+      const { data, error } = await supabase
+        .from('mindfulness_resources')
+        .insert([{
+          ...resourceData,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }])
+        .select()
+        .single();
+      return { data, error };
+    } catch (error) {
+      console.error('Error in createMindfulnessResource:', error);
+      return { data: null, error: error as any };
+    }
+  },
+
+  updateMindfulnessResource: async (id: string, resourceData: Partial<MindfulnessResource>) => {
+    try {
+      const { data, error } = await supabase
+        .from('mindfulness_resources')
+        .update({
+          ...resourceData,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id)
+        .select()
+        .single();
+      return { data, error };
+    } catch (error) {
+      console.error('Error in updateMindfulnessResource:', error);
+      return { data: null, error: error as any };
+    }
+  },
+
+  deleteMindfulnessResource: async (id: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('mindfulness_resources')
+        .delete()
+        .eq('id', id);
+      return { data, error };
+    } catch (error) {
+      console.error('Error in deleteMindfulnessResource:', error);
+      return { data: null, error: error as any };
+    }
+  },
+
+  getMindfulnessResourcesByType: async (type: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('mindfulness_resources')
+        .select('*')
+        .eq('type', type)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
+      return { data: data || [], error };
+    } catch (error) {
+      console.error('Error in getMindfulnessResourcesByType:', error);
+      return { data: [], error: error as any };
     }
   },
 
