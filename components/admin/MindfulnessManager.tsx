@@ -10,7 +10,7 @@ interface MindfulnessResource {
   duration: number;
   difficulty: 'principiante' | 'intermedio' | 'avanzado';
   url: string;
-  type: 'youtube' | 'spotify';
+  type: 'youtube' | 'spotify'; // Esta línea era correcta, el error está en otro lado
   description: string;
   is_active: boolean;
   tags: string[];
@@ -51,15 +51,15 @@ export default function MindfulnessManager() {
   };
 
   const initializeData = async () => {
-    const initialResources = [
+    const initialResources: Omit<MindfulnessResource, 'id' | 'created_at'>[] = [
       // MEDITACIÓN
       {
         title: 'Meditación Guiada para Principiantes',
-        category: 'meditation' as const,
+        category: 'meditation',
         duration: 10,
-        difficulty: 'principiante' as const,
+        difficulty: 'principiante',
         url: 'https://www.youtube.com/watch?v=ZToicYcHIOU',
-        type: 'youtube' as const,
+        type: 'youtube',
         description: 'Introducción suave a la meditación con técnicas básicas',
         is_active: true,
         tags: ['principiante', 'guiada', 'básico'],
@@ -67,11 +67,11 @@ export default function MindfulnessManager() {
       },
       {
         title: 'Meditación Mindfulness Avanzada',
-        category: 'meditation' as const,
+        category: 'meditation',
         duration: 25,
-        difficulty: 'avanzado' as const,
+        difficulty: 'avanzado',
         url: 'https://www.youtube.com/watch?v=6p_yaNFSYao',
-        type: 'youtube' as const,
+        type: 'youtube',
         description: 'Práctica profunda de mindfulness para meditadores experimentados',
         is_active: true,
         tags: ['avanzado', 'mindfulness', 'profundo'],
@@ -79,11 +79,11 @@ export default function MindfulnessManager() {
       },
       {
         title: 'Meditación Body Scan Completa',
-        category: 'meditation' as const,
+        category: 'meditation',
         duration: 20,
-        difficulty: 'intermedio' as const,
+        difficulty: 'intermedio',
         url: 'https://www.youtube.com/watch?v=15q-N-_kkrU',
-        type: 'youtube' as const,
+        type: 'youtube',
         description: 'Escaneo corporal completo para relajación y conciencia',
         is_active: true,
         tags: ['body scan', 'corporal', 'conciencia'],
@@ -91,11 +91,11 @@ export default function MindfulnessManager() {
       },
       {
         title: 'Meditación para Dormir Profundo',
-        category: 'meditation' as const,
+        category: 'meditation',
         duration: 30,
-        difficulty: 'principiante' as const,
+        difficulty: 'principiante',
         url: 'https://www.youtube.com/watch?v=aXItOY0sLRY',
-        type: 'youtube' as const,
+        type: 'youtube',
         description: 'Meditación relajante para conciliar el sueño',
         is_active: true,
         tags: ['dormir', 'sueño', 'relajante'],
@@ -103,11 +103,11 @@ export default function MindfulnessManager() {
       },
       {
         title: 'Meditación Vipassana Tradicional',
-        category: 'meditation' as const,
+        category: 'meditation',
         duration: 45,
-        difficulty: 'avanzado' as const,
+        difficulty: 'avanzado',
         url: 'https://www.youtube.com/watch?v=jPpUNAFHgxM',
-        type: 'youtube' as const,
+        type: 'youtube',
         description: 'Práctica tradicional de meditación Vipassana',
         is_active: true,
         tags: ['vipassana', 'tradicional', 'budista'],
@@ -115,11 +115,11 @@ export default function MindfulnessManager() {
       },
       {
         title: 'Meditación de Amor y Compasión',
-        category: 'meditation' as const,
+        category: 'meditation',
         duration: 18,
-        difficulty: 'intermedio' as const,
+        difficulty: 'intermedio',
         url: 'https://www.youtube.com/watch?v=26UBqhJ4oPE',
-        type: 'youtube' as const,
+        type: 'youtube',
         description: 'Cultivo de amor bondadoso y compasión universal',
         is_active: true,
         tags: ['amor', 'compasión', 'bondad'],
@@ -129,11 +129,11 @@ export default function MindfulnessManager() {
       // RELAJACIÓN
       {
         title: 'Relajación Profunda Muscular',
-        category: 'relaxation' as const,
+        category: 'relaxation',
         duration: 15,
-        difficulty: 'principiante' as const,
+        difficulty: 'principiante',
         url: 'https://www.youtube.com/watch?v=1nePCqyJVzw',
-        type: 'youtube' as const,
+        type: 'youtube',
         description: 'Técnica de relajación muscular progresiva',
         is_active: true,
         tags: ['muscular', 'progresiva', 'tensión'],
@@ -141,11 +141,11 @@ export default function MindfulnessManager() {
       },
       {
         title: 'Música Relajante para Dormir',
-        category: 'relaxation' as const,
+        category: 'relaxation',
         duration: 60,
-        difficulty: 'principiante' as const,
+        difficulty: 'principiante',
         url: 'https://open.spotify.com/playlist/37i9dQZF1DX3Ogo9pFvBkY',
-        type: 'spotify' as const,
+        type: 'spotify',
         description: 'Playlist de música suave para un descanso reparador',
         is_active: true,
         tags: ['música', 'dormir', 'playlist'],
@@ -153,11 +153,11 @@ export default function MindfulnessManager() {
       },
       {
         title: 'Sonidos de la Naturaleza',
-        category: 'relaxation' as const,
+        category: 'relaxation',
         duration: 120,
-        difficulty: 'principiante' as const,
+        difficulty: 'principiante',
         url: 'https://open.spotify.com/playlist/37i9dQZF1DX8ymr6UES7vc',
-        type: 'spotify' as const,
+        type: 'spotify',
         description: 'Sonidos naturales para relajación profunda',
         is_active: true,
         tags: ['naturaleza', 'sonidos', 'ambiente'],
@@ -165,11 +165,11 @@ export default function MindfulnessManager() {
       },
       {
         title: 'Relajación con Cuencos Tibetanos',
-        category: 'relaxation' as const,
+        category: 'relaxation',
         duration: 25,
-        difficulty: 'intermedio' as const,
+        difficulty: 'intermedio',
         url: 'https://www.youtube.com/watch?v=eOL2q8leiLw',
-        type: 'youtube' as const,
+        type: 'youtube',
         description: 'Relajación profunda con sonidos de cuencos tibetanos',
         is_active: true,
         tags: ['cuencos', 'tibetanos', 'vibracional'],
@@ -177,11 +177,11 @@ export default function MindfulnessManager() {
       },
       {
         title: 'Técnica de Jacobson Completa',
-        category: 'relaxation' as const,
+        category: 'relaxation',
         duration: 35,
-        difficulty: 'intermedio' as const,
+        difficulty: 'intermedio',
         url: 'https://www.youtube.com/watch?v=1ZYbU82GVz4',
-        type: 'youtube' as const,
+        type: 'youtube',
         description: 'Relajación muscular progresiva según método Jacobson',
         is_active: true,
         tags: ['jacobson', 'método', 'científico'],
@@ -189,11 +189,11 @@ export default function MindfulnessManager() {
       },
       {
         title: 'Playlist Zen Instrumental',
-        category: 'relaxation' as const,
+        category: 'relaxation',
         duration: 90,
-        difficulty: 'principiante' as const,
+        difficulty: 'principiante',
         url: 'https://open.spotify.com/playlist/37i9dQZF1DWZqd5JICZI0u',
-        type: 'spotify' as const,
+        type: 'spotify',
         description: 'Música instrumental zen para meditación y relajación',
         is_active: true,
         tags: ['zen', 'instrumental', 'música'],
@@ -203,11 +203,11 @@ export default function MindfulnessManager() {
       // RESPIRACIÓN
       {
         title: 'Respiración 4-7-8 para Ansiedad',
-        category: 'breathing' as const,
+        category: 'breathing',
         duration: 8,
-        difficulty: 'principiante' as const,
+        difficulty: 'principiante',
         url: 'https://www.youtube.com/watch?v=YRPh_GaiL8s',
-        type: 'youtube' as const,
+        type: 'youtube',
         description: 'Técnica de respiración para reducir la ansiedad',
         is_active: true,
         tags: ['4-7-8', 'ansiedad', 'técnica'],
@@ -215,11 +215,11 @@ export default function MindfulnessManager() {
       },
       {
         title: 'Respiración Box para Focus',
-        category: 'breathing' as const,
+        category: 'breathing',
         duration: 12,
-        difficulty: 'intermedio' as const,
+        difficulty: 'intermedio',
         url: 'https://www.youtube.com/watch?v=tEmt1Znux58',
-        type: 'youtube' as const,
+        type: 'youtube',
         description: 'Respiración cuadrada para mejorar la concentración',
         is_active: true,
         tags: ['box', 'concentración', 'focus'],
@@ -227,11 +227,11 @@ export default function MindfulnessManager() {
       },
       {
         title: 'Pranayama Básico',
-        category: 'breathing' as const,
+        category: 'breathing',
         duration: 18,
-        difficulty: 'intermedio' as const,
+        difficulty: 'intermedio',
         url: 'https://www.youtube.com/watch?v=aNzAHkYDQoY',
-        type: 'youtube' as const,
+        type: 'youtube',
         description: 'Técnicas básicas de pranayama para principiantes',
         is_active: true,
         tags: ['pranayama', 'yoga', 'básico'],
@@ -239,11 +239,11 @@ export default function MindfulnessManager() {
       },
       {
         title: 'Respiración Wim Hof',
-        category: 'breathing' as const,
+        category: 'breathing',
         duration: 15,
-        difficulty: 'avanzado' as const,
+        difficulty: 'avanzado',
         url: 'https://www.youtube.com/watch?v=tybOi4hjZFQ',
-        type: 'youtube' as const,
+        type: 'youtube',
         description: 'Método de respiración Wim Hof para energía y salud',
         is_active: true,
         tags: ['wim hof', 'energía', 'frío'],
@@ -251,11 +251,11 @@ export default function MindfulnessManager() {
       },
       {
         title: 'Respiración Holotrópica',
-        category: 'breathing' as const,
+        category: 'breathing',
         duration: 30,
-        difficulty: 'avanzado' as const,
+        difficulty: 'avanzado',
         url: 'https://www.youtube.com/watch?v=7w0b1SURupE',
-        type: 'youtube' as const,
+        type: 'youtube',
         description: 'Técnica avanzada de respiración holotrópica',
         is_active: true,
         tags: ['holotrópica', 'avanzado', 'terapéutico'],
@@ -263,11 +263,11 @@ export default function MindfulnessManager() {
       },
       {
         title: 'Respiración para Dormir',
-        category: 'breathing' as const,
+        category: 'breathing',
         duration: 10,
-        difficulty: 'principiante' as const,
+        difficulty: 'principiante',
         url: 'https://www.youtube.com/watch?v=DbDoBzGY3vo',
-        type: 'youtube' as const,
+        type: 'youtube',
         description: 'Respiración relajante para conciliar el sueño',
         is_active: true,
         tags: ['dormir', 'relajante', 'nocturno'],
@@ -277,11 +277,11 @@ export default function MindfulnessManager() {
       // MENTALIDAD
       {
         title: 'Afirmaciones Positivas Diarias',
-        category: 'mindset' as const,
+        category: 'mindset',
         duration: 15,
-        difficulty: 'principiante' as const,
+        difficulty: 'principiante',
         url: 'https://www.youtube.com/watch?v=IdTMDpizis8',
-        type: 'youtube' as const,
+        type: 'youtube',
         description: 'Afirmaciones poderosas para reprogramar la mente',
         is_active: true,
         tags: ['afirmaciones', 'positivo', 'diario'],
@@ -289,11 +289,11 @@ export default function MindfulnessManager() {
       },
       {
         title: 'Meditación de Gratitud',
-        category: 'mindset' as const,
+        category: 'mindset',
         duration: 12,
-        difficulty: 'principiante' as const,
+        difficulty: 'principiante',
         url: 'https://www.youtube.com/watch?v=6pLuUbBmXWo',
-        type: 'youtube' as const,
+        type: 'youtube',
         description: 'Práctica de gratitud para transformar la perspectiva',
         is_active: true,
         tags: ['gratitud', 'perspectiva', 'transformación'],
@@ -301,11 +301,11 @@ export default function MindfulnessManager() {
       },
       {
         title: 'Mindfulness en Movimiento',
-        category: 'mindset' as const,
+        category: 'mindset',
         duration: 20,
-        difficulty: 'intermedio' as const,
+        difficulty: 'intermedio',
         url: 'https://www.youtube.com/watch?v=HmQkKS9N-xU',
-        type: 'youtube' as const,
+        type: 'youtube',
         description: 'Práctica de mindfulness durante actividades cotidianas',
         is_active: true,
         tags: ['movimiento', 'cotidiano', 'activo'],
@@ -313,11 +313,11 @@ export default function MindfulnessManager() {
       },
       {
         title: 'Visualización Creativa',
-        category: 'mindset' as const,
+        category: 'mindset',
         duration: 22,
-        difficulty: 'intermedio' as const,
+        difficulty: 'intermedio',
         url: 'https://www.youtube.com/watch?v=3vyZZTOWw-o',
-        type: 'youtube' as const,
+        type: 'youtube',
         description: 'Técnicas de visualización para manifestar objetivos',
         is_active: true,
         tags: ['visualización', 'creativa', 'manifestación'],
@@ -325,11 +325,11 @@ export default function MindfulnessManager() {
       },
       {
         title: 'Reprogramación Mental',
-        category: 'mindset' as const,
+        category: 'mindset',
         duration: 25,
-        difficulty: 'avanzado' as const,
+        difficulty: 'avanzado',
         url: 'https://www.youtube.com/watch?v=lw3IPD0lBbU',
-        type: 'youtube' as const,
+        type: 'youtube',
         description: 'Técnicas avanzadas para reprogramar patrones mentales',
         is_active: true,
         tags: ['reprogramación', 'patrones', 'mental'],
@@ -337,11 +337,11 @@ export default function MindfulnessManager() {
       },
       {
         title: 'Mindset de Abundancia',
-        category: 'mindset' as const,
+        category: 'mindset',
         duration: 18,
-        difficulty: 'intermedio' as const,
+        difficulty: 'intermedio',
         url: 'https://www.youtube.com/watch?v=fVWp_0q8oRA',
-        type: 'youtube' as const,
+        type: 'youtube',
         description: 'Desarrollo de mentalidad de abundancia y prosperidad',
         is_active: true,
         tags: ['abundancia', 'prosperidad', 'mindset'],
@@ -633,19 +633,6 @@ function ResourceForm({ resource, onSave, onClose }: ResourceFormProps) {
                 onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value as any }))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
-                {MINDFULNESS_CATEGORIES.map(category => (
-                  <option key={category.id} value={category.id}>{category.name}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Dificultad</label>
-              <select
-                value={formData.difficulty}
-                onChange={(e) => setFormData(prev => ({ ...prev, difficulty: e.target.value as any }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
                 {DIFFICULTIES.map(difficulty => (
                   <option key={difficulty.id} value={difficulty.id}>{difficulty.name}</option>
                 ))}
@@ -755,4 +742,17 @@ function ResourceForm({ resource, onSave, onClose }: ResourceFormProps) {
       </div>
     </div>
   );
-}
+}-blue-500 focus:border-blue-500"
+              >
+                {MINDFULNESS_CATEGORIES.map(category => (
+                  <option key={category.id} value={category.id}>{category.name}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Dificultad</label>
+              <select
+                value={formData.difficulty}
+                onChange={(e) => setFormData(prev => ({ ...prev, difficulty: e.target.value as any }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring
