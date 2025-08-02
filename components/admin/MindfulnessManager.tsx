@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -14,6 +13,8 @@ interface MindfulnessResource {
   type: 'youtube' | 'spotify';
   description: string;
   is_active: boolean;
+  tags: string[];
+  content_url: string;
   created_at: string;
 }
 
@@ -54,249 +55,297 @@ export default function MindfulnessManager() {
       // MEDITACIÓN
       {
         title: 'Meditación Guiada para Principiantes',
-        category: 'meditation',
+        category: 'meditation' as const,
         duration: 10,
-        difficulty: 'principiante',
+        difficulty: 'principiante' as const,
         url: 'https://www.youtube.com/watch?v=ZToicYcHIOU',
-        type: 'youtube',
+        type: 'youtube' as const,
         description: 'Introducción suave a la meditación con técnicas básicas',
-        is_active: true
+        is_active: true,
+        tags: ['principiante', 'guiada', 'básico'],
+        content_url: 'https://www.youtube.com/watch?v=ZToicYcHIOU'
       },
       {
         title: 'Meditación Mindfulness Avanzada',
-        category: 'meditation',
+        category: 'meditation' as const,
         duration: 25,
-        difficulty: 'avanzado',
+        difficulty: 'avanzado' as const,
         url: 'https://www.youtube.com/watch?v=6p_yaNFSYao',
-        type: 'youtube',
+        type: 'youtube' as const,
         description: 'Práctica profunda de mindfulness para meditadores experimentados',
-        is_active: true
+        is_active: true,
+        tags: ['avanzado', 'mindfulness', 'profundo'],
+        content_url: 'https://www.youtube.com/watch?v=6p_yaNFSYao'
       },
       {
         title: 'Meditación Body Scan Completa',
-        category: 'meditation',
+        category: 'meditation' as const,
         duration: 20,
-        difficulty: 'intermedio',
+        difficulty: 'intermedio' as const,
         url: 'https://www.youtube.com/watch?v=15q-N-_kkrU',
-        type: 'youtube',
+        type: 'youtube' as const,
         description: 'Escaneo corporal completo para relajación y conciencia',
-        is_active: true
+        is_active: true,
+        tags: ['body scan', 'corporal', 'conciencia'],
+        content_url: 'https://www.youtube.com/watch?v=15q-N-_kkrU'
       },
       {
         title: 'Meditación para Dormir Profundo',
-        category: 'meditation',
+        category: 'meditation' as const,
         duration: 30,
-        difficulty: 'principiante',
+        difficulty: 'principiante' as const,
         url: 'https://www.youtube.com/watch?v=aXItOY0sLRY',
-        type: 'youtube',
+        type: 'youtube' as const,
         description: 'Meditación relajante para conciliar el sueño',
-        is_active: true
+        is_active: true,
+        tags: ['dormir', 'sueño', 'relajante'],
+        content_url: 'https://www.youtube.com/watch?v=aXItOY0sLRY'
       },
       {
         title: 'Meditación Vipassana Tradicional',
-        category: 'meditation',
+        category: 'meditation' as const,
         duration: 45,
-        difficulty: 'avanzado',
+        difficulty: 'avanzado' as const,
         url: 'https://www.youtube.com/watch?v=jPpUNAFHgxM',
-        type: 'youtube',
+        type: 'youtube' as const,
         description: 'Práctica tradicional de meditación Vipassana',
-        is_active: true
+        is_active: true,
+        tags: ['vipassana', 'tradicional', 'budista'],
+        content_url: 'https://www.youtube.com/watch?v=jPpUNAFHgxM'
       },
       {
         title: 'Meditación de Amor y Compasión',
-        category: 'meditation',
+        category: 'meditation' as const,
         duration: 18,
-        difficulty: 'intermedio',
+        difficulty: 'intermedio' as const,
         url: 'https://www.youtube.com/watch?v=26UBqhJ4oPE',
-        type: 'youtube',
+        type: 'youtube' as const,
         description: 'Cultivo de amor bondadoso y compasión universal',
-        is_active: true
+        is_active: true,
+        tags: ['amor', 'compasión', 'bondad'],
+        content_url: 'https://www.youtube.com/watch?v=26UBqhJ4oPE'
       },
 
       // RELAJACIÓN
       {
         title: 'Relajación Profunda Muscular',
-        category: 'relaxation',
+        category: 'relaxation' as const,
         duration: 15,
-        difficulty: 'principiante',
+        difficulty: 'principiante' as const,
         url: 'https://www.youtube.com/watch?v=1nePCqyJVzw',
-        type: 'youtube',
+        type: 'youtube' as const,
         description: 'Técnica de relajación muscular progresiva',
-        is_active: true
+        is_active: true,
+        tags: ['muscular', 'progresiva', 'tensión'],
+        content_url: 'https://www.youtube.com/watch?v=1nePCqyJVzw'
       },
       {
         title: 'Música Relajante para Dormir',
-        category: 'relaxation',
+        category: 'relaxation' as const,
         duration: 60,
-        difficulty: 'principiante',
+        difficulty: 'principiante' as const,
         url: 'https://open.spotify.com/playlist/37i9dQZF1DX3Ogo9pFvBkY',
-        type: 'spotify',
+        type: 'spotify' as const,
         description: 'Playlist de música suave para un descanso reparador',
-        is_active: true
+        is_active: true,
+        tags: ['música', 'dormir', 'playlist'],
+        content_url: 'https://open.spotify.com/playlist/37i9dQZF1DX3Ogo9pFvBkY'
       },
       {
         title: 'Sonidos de la Naturaleza',
-        category: 'relaxation',
+        category: 'relaxation' as const,
         duration: 120,
-        difficulty: 'principiante',
+        difficulty: 'principiante' as const,
         url: 'https://open.spotify.com/playlist/37i9dQZF1DX8ymr6UES7vc',
-        type: 'spotify',
+        type: 'spotify' as const,
         description: 'Sonidos naturales para relajación profunda',
-        is_active: true
+        is_active: true,
+        tags: ['naturaleza', 'sonidos', 'ambiente'],
+        content_url: 'https://open.spotify.com/playlist/37i9dQZF1DX8ymr6UES7vc'
       },
       {
         title: 'Relajación con Cuencos Tibetanos',
-        category: 'relaxation',
+        category: 'relaxation' as const,
         duration: 25,
-        difficulty: 'intermedio',
+        difficulty: 'intermedio' as const,
         url: 'https://www.youtube.com/watch?v=eOL2q8leiLw',
-        type: 'youtube',
+        type: 'youtube' as const,
         description: 'Relajación profunda con sonidos de cuencos tibetanos',
-        is_active: true
+        is_active: true,
+        tags: ['cuencos', 'tibetanos', 'vibracional'],
+        content_url: 'https://www.youtube.com/watch?v=eOL2q8leiLw'
       },
       {
         title: 'Técnica de Jacobson Completa',
-        category: 'relaxation',
+        category: 'relaxation' as const,
         duration: 35,
-        difficulty: 'intermedio',
+        difficulty: 'intermedio' as const,
         url: 'https://www.youtube.com/watch?v=1ZYbU82GVz4',
-        type: 'youtube',
+        type: 'youtube' as const,
         description: 'Relajación muscular progresiva según método Jacobson',
-        is_active: true
+        is_active: true,
+        tags: ['jacobson', 'método', 'científico'],
+        content_url: 'https://www.youtube.com/watch?v=1ZYbU82GVz4'
       },
       {
         title: 'Playlist Zen Instrumental',
-        category: 'relaxation',
+        category: 'relaxation' as const,
         duration: 90,
-        difficulty: 'principiante',
+        difficulty: 'principiante' as const,
         url: 'https://open.spotify.com/playlist/37i9dQZF1DWZqd5JICZI0u',
-        type: 'spotify',
+        type: 'spotify' as const,
         description: 'Música instrumental zen para meditación y relajación',
-        is_active: true
+        is_active: true,
+        tags: ['zen', 'instrumental', 'música'],
+        content_url: 'https://open.spotify.com/playlist/37i9dQZF1DWZqd5JICZI0u'
       },
 
       // RESPIRACIÓN
       {
         title: 'Respiración 4-7-8 para Ansiedad',
-        category: 'breathing',
+        category: 'breathing' as const,
         duration: 8,
-        difficulty: 'principiante',
+        difficulty: 'principiante' as const,
         url: 'https://www.youtube.com/watch?v=YRPh_GaiL8s',
-        type: 'youtube',
+        type: 'youtube' as const,
         description: 'Técnica de respiración para reducir la ansiedad',
-        is_active: true
+        is_active: true,
+        tags: ['4-7-8', 'ansiedad', 'técnica'],
+        content_url: 'https://www.youtube.com/watch?v=YRPh_GaiL8s'
       },
       {
         title: 'Respiración Box para Focus',
-        category: 'breathing',
+        category: 'breathing' as const,
         duration: 12,
-        difficulty: 'intermedio',
+        difficulty: 'intermedio' as const,
         url: 'https://www.youtube.com/watch?v=tEmt1Znux58',
-        type: 'youtube',
+        type: 'youtube' as const,
         description: 'Respiración cuadrada para mejorar la concentración',
-        is_active: true
+        is_active: true,
+        tags: ['box', 'concentración', 'focus'],
+        content_url: 'https://www.youtube.com/watch?v=tEmt1Znux58'
       },
       {
         title: 'Pranayama Básico',
-        category: 'breathing',
+        category: 'breathing' as const,
         duration: 18,
-        difficulty: 'intermedio',
+        difficulty: 'intermedio' as const,
         url: 'https://www.youtube.com/watch?v=aNzAHkYDQoY',
-        type: 'youtube',
+        type: 'youtube' as const,
         description: 'Técnicas básicas de pranayama para principiantes',
-        is_active: true
+        is_active: true,
+        tags: ['pranayama', 'yoga', 'básico'],
+        content_url: 'https://www.youtube.com/watch?v=aNzAHkYDQoY'
       },
       {
         title: 'Respiración Wim Hof',
-        category: 'breathing',
+        category: 'breathing' as const,
         duration: 15,
-        difficulty: 'avanzado',
+        difficulty: 'avanzado' as const,
         url: 'https://www.youtube.com/watch?v=tybOi4hjZFQ',
-        type: 'youtube',
+        type: 'youtube' as const,
         description: 'Método de respiración Wim Hof para energía y salud',
-        is_active: true
+        is_active: true,
+        tags: ['wim hof', 'energía', 'frío'],
+        content_url: 'https://www.youtube.com/watch?v=tybOi4hjZFQ'
       },
       {
         title: 'Respiración Holotrópica',
-        category: 'breathing',
+        category: 'breathing' as const,
         duration: 30,
-        difficulty: 'avanzado',
+        difficulty: 'avanzado' as const,
         url: 'https://www.youtube.com/watch?v=7w0b1SURupE',
-        type: 'youtube',
+        type: 'youtube' as const,
         description: 'Técnica avanzada de respiración holotrópica',
-        is_active: true
+        is_active: true,
+        tags: ['holotrópica', 'avanzado', 'terapéutico'],
+        content_url: 'https://www.youtube.com/watch?v=7w0b1SURupE'
       },
       {
         title: 'Respiración para Dormir',
-        category: 'breathing',
+        category: 'breathing' as const,
         duration: 10,
-        difficulty: 'principiante',
+        difficulty: 'principiante' as const,
         url: 'https://www.youtube.com/watch?v=DbDoBzGY3vo',
-        type: 'youtube',
+        type: 'youtube' as const,
         description: 'Respiración relajante para conciliar el sueño',
-        is_active: true
+        is_active: true,
+        tags: ['dormir', 'relajante', 'nocturno'],
+        content_url: 'https://www.youtube.com/watch?v=DbDoBzGY3vo'
       },
 
       // MENTALIDAD
       {
         title: 'Afirmaciones Positivas Diarias',
-        category: 'mindset',
+        category: 'mindset' as const,
         duration: 15,
-        difficulty: 'principiante',
+        difficulty: 'principiante' as const,
         url: 'https://www.youtube.com/watch?v=IdTMDpizis8',
-        type: 'youtube',
+        type: 'youtube' as const,
         description: 'Afirmaciones poderosas para reprogramar la mente',
-        is_active: true
+        is_active: true,
+        tags: ['afirmaciones', 'positivo', 'diario'],
+        content_url: 'https://www.youtube.com/watch?v=IdTMDpizis8'
       },
       {
         title: 'Meditación de Gratitud',
-        category: 'mindset',
+        category: 'mindset' as const,
         duration: 12,
-        difficulty: 'principiante',
+        difficulty: 'principiante' as const,
         url: 'https://www.youtube.com/watch?v=6pLuUbBmXWo',
-        type: 'youtube',
+        type: 'youtube' as const,
         description: 'Práctica de gratitud para transformar la perspectiva',
-        is_active: true
+        is_active: true,
+        tags: ['gratitud', 'perspectiva', 'transformación'],
+        content_url: 'https://www.youtube.com/watch?v=6pLuUbBmXWo'
       },
       {
         title: 'Mindfulness en Movimiento',
-        category: 'mindset',
+        category: 'mindset' as const,
         duration: 20,
-        difficulty: 'intermedio',
+        difficulty: 'intermedio' as const,
         url: 'https://www.youtube.com/watch?v=HmQkKS9N-xU',
-        type: 'youtube',
+        type: 'youtube' as const,
         description: 'Práctica de mindfulness durante actividades cotidianas',
-        is_active: true
+        is_active: true,
+        tags: ['movimiento', 'cotidiano', 'activo'],
+        content_url: 'https://www.youtube.com/watch?v=HmQkKS9N-xU'
       },
       {
         title: 'Visualización Creativa',
-        category: 'mindset',
+        category: 'mindset' as const,
         duration: 22,
-        difficulty: 'intermedio',
+        difficulty: 'intermedio' as const,
         url: 'https://www.youtube.com/watch?v=3vyZZTOWw-o',
-        type: 'youtube',
+        type: 'youtube' as const,
         description: 'Técnicas de visualización para manifestar objetivos',
-        is_active: true
+        is_active: true,
+        tags: ['visualización', 'creativa', 'manifestación'],
+        content_url: 'https://www.youtube.com/watch?v=3vyZZTOWw-o'
       },
       {
         title: 'Reprogramación Mental',
-        category: 'mindset',
+        category: 'mindset' as const,
         duration: 25,
-        difficulty: 'avanzado',
+        difficulty: 'avanzado' as const,
         url: 'https://www.youtube.com/watch?v=lw3IPD0lBbU',
-        type: 'youtube',
+        type: 'youtube' as const,
         description: 'Técnicas avanzadas para reprogramar patrones mentales',
-        is_active: true
+        is_active: true,
+        tags: ['reprogramación', 'patrones', 'mental'],
+        content_url: 'https://www.youtube.com/watch?v=lw3IPD0lBbU'
       },
       {
         title: 'Mindset de Abundancia',
-        category: 'mindset',
+        category: 'mindset' as const,
         duration: 18,
-        difficulty: 'intermedio',
+        difficulty: 'intermedio' as const,
         url: 'https://www.youtube.com/watch?v=fVWp_0q8oRA',
-        type: 'youtube',
+        type: 'youtube' as const,
         description: 'Desarrollo de mentalidad de abundancia y prosperidad',
-        is_active: true
+        is_active: true,
+        tags: ['abundancia', 'prosperidad', 'mindset'],
+        content_url: 'https://www.youtube.com/watch?v=fVWp_0q8oRA'
       }
     ];
 
@@ -321,7 +370,7 @@ export default function MindfulnessManager() {
       if (editingResource) {
         await dbOperations.updateMindfulnessResource(editingResource.id, resourceData);
       } else {
-        await dbOperations.addMindfulnessResource(resourceData);
+        await dbOperations.createMindfulnessResource(resourceData);
       }
       
       setEditingResource(null);
@@ -544,12 +593,17 @@ function ResourceForm({ resource, onSave, onClose }: ResourceFormProps) {
     url: resource?.url || '',
     type: resource?.type || 'youtube' as const,
     description: resource?.description || '',
-    is_active: resource?.is_active ?? true
+    is_active: resource?.is_active ?? true,
+    tags: resource?.tags || [],
+    content_url: resource?.content_url || ''
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData);
+    onSave({
+      ...formData,
+      content_url: formData.content_url || formData.url
+    });
   };
 
   return (
@@ -634,6 +688,28 @@ function ResourceForm({ resource, onSave, onClose }: ResourceFormProps) {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="https://..."
               required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Content URL (opcional)</label>
+            <input
+              type="url"
+              value={formData.content_url}
+              onChange={(e) => setFormData(prev => ({ ...prev, content_url: e.target.value }))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="https://... (si es diferente a URL principal)"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Tags (separados por comas)</label>
+            <input
+              type="text"
+              value={formData.tags.join(', ')}
+              onChange={(e) => setFormData(prev => ({ ...prev, tags: e.target.value.split(',').map(tag => tag.trim()).filter(tag => tag) }))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="meditación, relajación, principiante"
             />
           </div>
 
