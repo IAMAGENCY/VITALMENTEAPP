@@ -46,6 +46,8 @@ export default function FoodBankManager() {
           carbs_per_100g: 14.0,
           fat_per_100g: 0.2,
           fiber_per_100g: 2.4,
+          sugar_per_100g: 0,        
+          sodium_per_100g: 74,      
           image_url: '',
           is_custom: false,
           created_at: new Date().toISOString()
