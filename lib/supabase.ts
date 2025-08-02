@@ -466,6 +466,24 @@ export const dbOperations = {
     }
   },
 
+markSupplementAsPurchased: async (recommendationId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('supplement_recommendations')
+      .update({
+        is_active: false,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', recommendationId)
+      .select()
+      .single();
+    return { data, error };
+  } catch (error) {
+    console.error('Error in markSupplementAsPurchased:', error);
+    return { data: null, error: error as any };
+  }
+},
+
   // ========== WORKOUTS ==========
   getActiveWorkoutsByCategory: async (category: string) => {
     try {
