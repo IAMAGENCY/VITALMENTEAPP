@@ -64,7 +64,7 @@ export default function BankManager({ onSelectFood, showAddFood = true }: BankMa
     let filtered = foods;
 
     if (selectedCategory && selectedCategory !== 'Todas') {
-      filtered = filtered.filter(food => food.category === selectedCategory);
+      filtered = filtered.filter(food => food.categoria === selectedCategory);
     }
 
     if (searchTerm.trim()) {
