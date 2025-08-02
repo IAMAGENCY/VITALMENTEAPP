@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -13,6 +12,7 @@ export default function TiendaPage() {
   const [filteredSupplements, setFilteredSupplements] = useState<Supplement[]>([]);
   const [recommendations, setRecommendations] = useState<SupplementRecommendation[]>([]);
   const [userId, setUserId] = useState<string>('');
+  const [recommendedSupplements, setRecommendedSupplements] = useState<Supplement[]>([]);
 
   const categories = ['Todos', 'Proteínas', 'Vitaminas', 'Pre-Entreno', 'Grasas Saludables', 'Pérdida de Peso', 'Fuerza', 'Aminoácidos', 'Bienestar'];
 
@@ -61,6 +61,16 @@ export default function TiendaPage() {
       const { data } = await dbOperations.getUserSupplementRecommendations(userId);
       if (data) {
         setRecommendations(data.slice(0, 3));
+        
+        // Obtener los datos completos de los suplementos recomendados
+        const recommendedSupplementsData: Supplement[] = [];
+        for (const rec of data.slice(0, 3)) {
+          const supplement = supplements.find(s => s.id === rec.supplement_id);
+          if (supplement) {
+            recommendedSupplementsData.push(supplement);
+          }
+        }
+        setRecommendedSupplements(recommendedSupplementsData);
       }
     } catch (error) {
       console.error('Error cargando recomendaciones:', error);
@@ -75,6 +85,10 @@ export default function TiendaPage() {
     }
   };
 
+  const getSupplementById = (supplementId: string): Supplement | undefined => {
+    return supplements.find(s => s.id === supplementId);
+  };
+
   const handlePurchase = async (supplementId: string) => {
     try {
       // Marcar recomendación como comprada si existe
@@ -82,6 +96,7 @@ export default function TiendaPage() {
       if (recommendation) {
         await dbOperations.markSupplementAsPurchased(recommendation.id);
         setRecommendations(prev => prev.filter(rec => rec.id !== recommendation.id));
+        setRecommendedSupplements(prev => prev.filter(s => s.id !== supplementId));
       }
       
       // En producción, integrar con sistema de pagos real
@@ -134,34 +149,37 @@ export default function TiendaPage() {
               </div>
               
               <div className="space-y-3">
-                {recommendations.map(rec => (
-                  <div key={rec.id} className="bg-white rounded-lg p-3 shadow-sm">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <h4 className="font-medium text-gray-900 text-sm">
-                          {rec.supplement?.name}
-                        </h4>
-                        <p className="text-gray-600 text-xs mt-1">
-                          {rec.reason}
-                        </p>
-                        <div className="flex items-center justify-between mt-2">
-                          <span className="text-emerald-600 font-medium">
-                            ${rec.supplement?.price?.toLocaleString()}
-                          </span>
-                          <span className="text-xs text-gray-500">
-                            {Math.round(rec.confidence_score * 100)}% match
-                          </span>
+                {recommendations.map(rec => {
+                  const supplement = getSupplementById(rec.supplement_id);
+                  return (
+                    <div key={rec.id} className="bg-white rounded-lg p-3 shadow-sm">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <h4 className="font-medium text-gray-900 text-sm">
+                            {supplement?.name || 'Suplemento no encontrado'}
+                          </h4>
+                          <p className="text-gray-600 text-xs mt-1">
+                            {rec.reason}
+                          </p>
+                          <div className="flex items-center justify-between mt-2">
+                            <span className="text-emerald-600 font-medium">
+                              ${supplement?.price?.toLocaleString() || '0'}
+                            </span>
+                            <span className="text-xs text-gray-500">
+                              {Math.round(rec.confidence_score * 100)}% match
+                            </span>
+                          </div>
                         </div>
+                        <button
+                          onClick={() => handlePurchase(rec.supplement_id)}
+                          className="ml-3 px-3 py-1 bg-emerald-600 text-white rounded-md text-xs !rounded-button"
+                        >
+                          Comprar
+                        </button>
                       </div>
-                      <button
-                        onClick={() => handlePurchase(rec.supplement_id)}
-                        className="ml-3 px-3 py-1 bg-emerald-600 text-white rounded-md text-xs !rounded-button"
-                      >
-                        Comprar
-                      </button>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
