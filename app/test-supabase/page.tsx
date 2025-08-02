@@ -45,7 +45,6 @@ export default function TestSupabase() {
       // Test 3: Inicializar datos si están vacíos
       if (!foodsData || foodsData.length === 0) {
         addResult('🌱 Inicializando banco de alimentos...');
-        // CORREGIDO: initializeDatabase es una función, no un objeto
         await initializeDatabase();
         
         const { data: newFoods } = await dbOperations.getFoods();
@@ -63,7 +62,19 @@ export default function TestSupabase() {
     try {
       addResult('🧪 Probando crear alimento personalizado...');
       
+      // CORREGIDO: Objeto con TODAS las propiedades necesarias (inglés y español)
       const newFood = {
+        // Propiedades en inglés (para compatibilidad)
+        name: "Manzana Test",
+        category: "Frutas",
+        calories_per_100g: 52,
+        protein_per_100g: 0.3,
+        carbs_per_100g: 14,
+        fat_per_100g: 0.2,
+        fiber_per_100g: 2.4,
+        is_custom: true,
+        
+        // Propiedades en español (según interfaz Food)
         nombre: "Manzana Test",
         categoria: "Frutas", 
         calorias_por_100g: 52,
@@ -73,12 +84,15 @@ export default function TestSupabase() {
         fibra_por_100g: 2.4,
         es_personalizado: true
       };
+
       const { data, error } = await dbOperations.createFood(newFood);
       
       if (error) {
         addResult(`❌ Error creando alimento: ${error.message}`);
       } else {
-        addResult(`✅ Alimento creado exitosamente: ${data?.name}`);
+        // CORREGIDO: Usar nombre en español o fallback a inglés
+        const foodName = data?.nombre || data?.name || 'Alimento creado';
+        addResult(`✅ Alimento creado exitosamente: ${foodName}`);
         // Recargar lista
         const { data: updatedFoods } = await dbOperations.getFoods();
         setFoods(updatedFoods || []);
@@ -145,10 +159,16 @@ export default function TestSupabase() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {foods.slice(0, 10).map((food) => (
                 <div key={food.id} className="bg-gray-50 p-3 rounded-lg">
-                  <div className="font-semibold text-gray-900">{food.name}</div>
+                  {/* CORREGIDO: Usar propiedades con fallback */}
+                  <div className="font-semibold text-gray-900">
+                    {food.nombre || food.name || 'Sin nombre'}
+                  </div>
                   <div className="text-sm text-gray-600">
-                    {food.category} • {food.calories_per_100g} cal/100g
-                    {food.is_custom && <span className="ml-2 text-blue-600">👤 Personalizado</span>}
+                    {food.categoria || food.category || 'Sin categoría'} • {' '}
+                    {food.calorias_por_100g || food.calories_per_100g || 0} cal/100g
+                    {(food.es_personalizado || food.is_custom) && (
+                      <span className="ml-2 text-blue-600">👤 Personalizado</span>
+                    )}
                   </div>
                 </div>
               ))}
