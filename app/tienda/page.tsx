@@ -39,7 +39,7 @@ export default function TiendaPage() {
       setUserId(currentUserId);
 
       // Cargar suplementos activos
-      const { data, error } = await dbOperations.getActiveSupplements();
+      const { data, error } = await dbOperations.getAllSupplements();
       
       if (error) {
         console.error('Error cargando suplementos:', error);
