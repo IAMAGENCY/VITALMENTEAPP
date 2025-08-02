@@ -434,6 +434,74 @@ export const dbOperations = {
     }
   },
 
+  // ========== FUNCIONES DE AGUA ADICIONALES ==========
+  addWaterIntake: async (waterData: { user_id: string; amount_ml: number; date: string }) => {
+    try {
+      const { data, error } = await supabase
+        .from('water_intake')
+        .insert([{
+          user_id: waterData.user_id,
+          amount: waterData.amount_ml,
+          date: waterData.date,
+          created_at: new Date().toISOString()
+        }])
+        .select()
+        .single();
+      return { data, error };
+    } catch (error) {
+      console.error('Error in addWaterIntake:', error);
+      return { data: null, error: error as any };
+    }
+  },
+
+  removeWaterIntake: async (intakeId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('water_intake')
+        .delete()
+        .eq('id', intakeId);
+      return { data, error };
+    } catch (error) {
+      console.error('Error in removeWaterIntake:', error);
+      return { data: null, error: error as any };
+    }
+  },
+
+  getTodayWaterIntake: async (userId: string) => {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const { data, error } = await supabase
+        .from('water_intake')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('date', today)
+        .order('created_at', { ascending: false });
+
+      return { data: data || [], error };
+    } catch (error) {
+      console.error('Error in getTodayWaterIntake:', error);
+      return { data: [], error: error as any };
+    }
+  },
+
+  updateWaterIntakeAmount: async (intakeId: string, newAmount: number) => {
+    try {
+      const { data, error } = await supabase
+        .from('water_intake')
+        .update({ 
+          amount: newAmount,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', intakeId)
+        .select()
+        .single();
+      return { data, error };
+    } catch (error) {
+      console.error('Error in updateWaterIntakeAmount:', error);
+      return { data: null, error: error as any };
+    }
+  },
+
   updateWaterIntake: async (intakeId: string, amount: number) => {
     try {
       const { data, error } = await supabase
