@@ -1,3 +1,4 @@
+// lib/types.ts - Versión corregida completa
 
 // Tipos principales de usuario
 export interface User {
@@ -18,7 +19,10 @@ export interface User {
   updated_at?: string;
 }
 
-// Tipos de alimentos
+// Alias para compatibilidad
+export interface Usuario extends User {}
+
+// 🔧 CORRIGIENDO INTERFAZ FOOD - Agregando propiedades faltantes
 export interface Food {
   id: string;
   name: string;
@@ -27,10 +31,29 @@ export interface Food {
   protein_per_100g: number;
   carbs_per_100g: number;
   fat_per_100g: number;
-  fiber_per_100g: number;
-  sugar_per_100g: number;
-  sodium_per_100g: number;
-  created_at: string;
+  fiber_per_100g?: number; // ← CAMBIO: opcional
+  sugar_per_100g?: number; // ← CAMBIO: opcional  
+  sodium_per_100g?: number; // ← CAMBIO: opcional
+  image_url?: string; // ← AGREGADO: propiedad faltante
+  is_custom?: boolean; // ← AGREGADO: propiedad faltante
+  created_at?: string; // ← CAMBIO: opcional
+}
+
+// Interfaz para mapeo español (usada en FoodBankManager)
+export interface Alimento {
+  id: string;
+  nombre: string;
+  categoria: string;
+  calorias_por_100g: number;
+  proteina_por_100g: number;
+  carbohidratos_por_100g: number;
+  grasas_por_100g: number;
+  fibra_por_100g?: number;
+  azucar_por_100g?: number;
+  sodio_por_100g?: number;
+  imagen_url?: string;
+  es_personalizado?: boolean;
+  created_at?: string;
 }
 
 // Tipos de comidas del usuario
@@ -273,4 +296,45 @@ export interface WompiTransaction {
   currency: string;
   payment_method_type: string;
   created_at: string;
+}
+
+// 🔧 AGREGANDO TIPOS ADICIONALES PARA COMPATIBILIDAD
+
+// Tipo para datos de formulario de alimentos
+export interface FoodFormData {
+  name: string;
+  category: string;
+  calories_per_100g: string;
+  protein_per_100g: string;
+  carbs_per_100g: string;
+  fat_per_100g: string;
+  fiber_per_100g: string;
+  sugar_per_100g: string;
+  sodium_per_100g: string;
+  image_url: string;
+  is_custom: boolean;
+}
+
+// Tipo para datos de usuario en registro
+export interface UserRegistrationData {
+  nombre: string;
+  apellidos?: string; // ← OPCIONAL para evitar errores
+  email: string;
+  edad: number;
+  peso: number;
+  altura: number;
+  genero: 'masculino' | 'femenino';
+  actividad: string;
+  objetivo: string;
+  experiencia: string;
+  condiciones: string[];
+  preferencias: string[];
+}
+
+// Tipo para respuestas de API
+export interface ApiResponse<T = any> {
+  success: boolean;
+  data?: T;
+  error?: string;
+  message?: string;
 }
