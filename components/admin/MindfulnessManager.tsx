@@ -10,7 +10,7 @@ interface MindfulnessResource {
   duration: number;
   difficulty: 'principiante' | 'intermedio' | 'avanzado';
   url: string;
-  type: 'youtube' | 'spotify'; // Esta línea era correcta, el error está en otro lado
+  type: 'youtube' | 'spotify';
   description: string;
   is_active: boolean;
   tags: string[];
@@ -633,6 +633,19 @@ function ResourceForm({ resource, onSave, onClose }: ResourceFormProps) {
                 onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value as any }))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
+                {MINDFULNESS_CATEGORIES.map(category => (
+                  <option key={category.id} value={category.id}>{category.name}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Dificultad</label>
+              <select
+                value={formData.difficulty}
+                onChange={(e) => setFormData(prev => ({ ...prev, difficulty: e.target.value as any }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
                 {DIFFICULTIES.map(difficulty => (
                   <option key={difficulty.id} value={difficulty.id}>{difficulty.name}</option>
                 ))}
@@ -742,17 +755,4 @@ function ResourceForm({ resource, onSave, onClose }: ResourceFormProps) {
       </div>
     </div>
   );
-}-blue-500 focus:border-blue-500"
-              >
-                {MINDFULNESS_CATEGORIES.map(category => (
-                  <option key={category.id} value={category.id}>{category.name}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Dificultad</label>
-              <select
-                value={formData.difficulty}
-                onChange={(e) => setFormData(prev => ({ ...prev, difficulty: e.target.value as any }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring
+}
