@@ -88,7 +88,7 @@ export default function RegistroPage() {
     if (!userId) return;
     
     try {
-      const { data: userInsights } = await dbOperations.getUserInsights(userId, 5);
+      const { data: userInsights } = await dbOperations.getUserInsights(userId);
       if (userInsights) {
         setInsights(userInsights.filter(insight => !insight.is_viewed));
       }
