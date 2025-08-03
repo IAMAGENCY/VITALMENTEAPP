@@ -1245,3 +1245,29 @@ export const dbOperations = {
     }
   }
 };
+
+// ========================= INITIALIZE DATABASE =========================
+
+// Función para inicializar la base de datos
+export const initializeDatabase = async () => {
+  try {
+    console.log('Inicializando base de datos...');
+    
+    // Verificar conexión con la base de datos
+    const { data, error } = await supabase
+      .from('foods')
+      .select('count')
+      .limit(1);
+    
+    if (error) {
+      console.error('Error checking database:', error);
+      return false;
+    }
+    
+    console.log('Base de datos inicializada correctamente');
+    return true;
+  } catch (error) {
+    console.error('Error initializing database:', error);
+    return false;
+  }
+};
