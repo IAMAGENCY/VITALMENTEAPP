@@ -755,4 +755,4 @@ function ResourceForm({ resource, onSave, onClose }: ResourceFormProps) {
       </div>
     </div>
   );
-}
+}"// Force rebuild" 
